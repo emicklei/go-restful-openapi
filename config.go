@@ -1,4 +1,4 @@
-package restfulapi
+package restfulspec
 
 import (
 	"net/http"

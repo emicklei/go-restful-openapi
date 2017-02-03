@@ -1,4 +1,4 @@
-package restfulapi
+package restfulspec
 
 import restful "github.com/emicklei/go-restful"
 
