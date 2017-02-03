@@ -11,11 +11,12 @@ func TestRouteToPath(t *testing.T) {
 	ws.Path("/tests")
 	ws.Consumes(restful.MIME_JSON)
 	ws.Produces(restful.MIME_XML)
-	r := ws.GET("/a").To(dummy).Writes(Sample{}).Build()
+	r := ws.GET("/a/{b}").To(dummy).
+		Param(ws.PathParameter("b", "value of b")).
+		Param(ws.QueryParameter("q", "value of q")).
+		Writes(Sample{}).
+		Build()
 
 	p := buildPath(r)
-
-	if got, want := p.Get.OperationProps.ID, "dummy"; got != want {
-		t.Errorf("got [%v] want [%v]", got, want)
-	}
+	t.Log(asJSON(p))
 }
