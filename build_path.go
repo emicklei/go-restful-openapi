@@ -5,8 +5,16 @@ import (
 	"github.com/go-openapi/spec"
 )
 
-func buildPath(r restful.Route) spec.PathItem {
-	op := buildOperation(r)
+func buildPaths(ws *restful.WebService) spec.Paths {
+	p := spec.Paths{Paths: map[string]spec.PathItem{}}
+	for _, each := range ws.Routes() {
+		p.Paths[each.Path] = buildPathItem(ws, each)
+	}
+	return p
+}
+
+func buildPathItem(ws *restful.WebService, r restful.Route) spec.PathItem {
+	op := buildOperation(ws, r)
 	props := spec.PathItemProps{}
 	switch r.Method {
 	case "GET":
@@ -30,13 +38,28 @@ func buildPath(r restful.Route) spec.PathItem {
 	return p
 }
 
-func buildOperation(r restful.Route) *spec.Operation {
+func buildOperation(ws *restful.WebService, r restful.Route) *spec.Operation {
 	o := spec.NewOperation(r.Operation)
 	o.Description = r.Doc
 	o.Consumes = r.Consumes
 	o.Produces = r.Produces
+	// collect any path parameters
+	for _, param := range ws.PathParameters() {
+		o.Parameters = append(o.Parameters, buildParameter(param))
+	}
+	// route specific params
 	for _, each := range r.ParameterDocs {
 		o.Parameters = append(o.Parameters, buildParameter(each))
+	}
+	o.Responses = new(spec.Responses)
+	props := o.Responses.ResponsesProps
+	props.StatusCodeResponses = map[int]spec.Response{}
+	for k, v := range r.ResponseErrors {
+		r := buildResponse(v)
+		props.StatusCodeResponses[k] = r
+		if 200 == k { // any 2xx code?
+			o.Responses.Default = &r
+		}
 	}
 	return o
 }
@@ -51,4 +74,9 @@ func buildParameter(r *restful.Parameter) spec.Parameter {
 	p.Default = param.DefaultValue
 	p.Format = param.DataFormat
 	return p
+}
+
+func buildResponse(e restful.ResponseError) (r spec.Response) {
+	r.Description = e.Message
+	return r
 }

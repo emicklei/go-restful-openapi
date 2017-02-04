@@ -8,15 +8,17 @@ import (
 
 func TestRouteToPath(t *testing.T) {
 	ws := new(restful.WebService)
-	ws.Path("/tests")
+	ws.Path("/tests/{v}")
+	ws.Param(ws.PathParameter("v", "value of v").DefaultValue("default-v"))
 	ws.Consumes(restful.MIME_JSON)
 	ws.Produces(restful.MIME_XML)
-	r := ws.GET("/a/{b}").To(dummy).
-		Param(ws.PathParameter("b", "value of b")).
-		Param(ws.QueryParameter("q", "value of q")).
-		Writes(Sample{}).
-		Build()
+	ws.Route(ws.GET("/a/{b}").To(dummy).
+		Doc("get the a b test").
+		Param(ws.PathParameter("b", "value of b").DefaultValue("default-b")).
+		Param(ws.QueryParameter("q", "value of q").DefaultValue("default-q")).
+		Returns(200, "list of a b tests", []Sample{}).
+		Writes([]Sample{}))
 
-	p := buildPath(r)
+	p := buildPaths(ws)
 	t.Log(asJSON(p))
 }
