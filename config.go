@@ -8,11 +8,17 @@ import (
 )
 
 // MapSchemaFormatFunc can be used to modify typeName at definition time.
+// To use it set the SchemaFormatHandler in the config.
 type MapSchemaFormatFunc func(typeName string) string
 
 // MapModelTypeNameFunc can be used to return the desired typeName for a given
 // type. It will return false if the default name should be used.
+// To use it set the ModelTypeNameHandler in the config.
 type MapModelTypeNameFunc func(t reflect.Type) (string, bool)
+
+// PostBuildSwaggerObjectFunc can be used to change the creates Swagger Object
+// before serving it. To use it set the PostBuildSwaggerObjectHandler in the config.
+type PostBuildSwaggerObjectFunc func(s *spec.Swagger)
 
 // Config holds service api metadata.
 type Config struct {
@@ -27,10 +33,10 @@ type Config struct {
 	DisableCORS bool
 	// Top-level API version. Is reflected in the resource listing.
 	APIVersion string
-	// OpenAPI global info struct
-	Info spec.Info
 	// [optional] If set, model builder should call this handler to get addition typename-to-swagger-format-field conversion.
 	SchemaFormatHandler MapSchemaFormatFunc
 	// [optional] If set, model builder should call this handler to retrieve the name for a given type.
 	ModelTypeNameHandler MapModelTypeNameFunc
+	// [optional] If set then call this function with the generated Swagger Object
+	PostBuildSwaggerObjectHandler PostBuildSwaggerObjectFunc
 }

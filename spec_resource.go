@@ -44,12 +44,14 @@ type specResource struct {
 }
 
 func (s specResource) getSwagger(req *restful.Request, resp *restful.Response) {
-	sw := spec.Swagger{
+	sw := &spec.Swagger{
 		SwaggerProps: spec.SwaggerProps{
-			Info:    &s.config.Info,
 			Swagger: "2.0",
 			Paths:   &(s.paths),
 		},
+	}
+	if s.config.PostBuildSwaggerObjectHandler != nil {
+		s.config.PostBuildSwaggerObjectHandler(sw)
 	}
 	resp.WriteAsJson(sw)
 }

@@ -121,26 +121,33 @@ func main() {
 		WebServices:    restful.RegisteredWebServices(), // you control what services are visible
 		WebServicesURL: "http://localhost:8080",
 		APIPath:        "/apidocs.json",
-		Info: spec.Info{
-			InfoProps: spec.InfoProps{
-				Title:       "UserService",
-				Description: "Resource for managing Users",
-				Contact: &spec.ContactInfo{
-					Name:  "john",
-					Email: "john@doe.rp",
-					URL:   "http://johndoe.org",
-				},
-				License: &spec.License{
-					Name: "MIT",
-					URL:  "http://mit.org",
-				},
-				Version: "1.0.0",
-			},
-		}}
+		PostBuildSwaggerObjectHandler: enrichSwaggerObject}
 	restfulspec.RegisterOpenAPIService(config, restful.DefaultContainer)
 
 	log.Printf("start listening on localhost:8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
+}
+
+func enrichSwaggerObject(swo *spec.Swagger) {
+	swo.Info = &spec.Info{
+		InfoProps: spec.InfoProps{
+			Title:       "UserService",
+			Description: "Resource for managing Users",
+			Contact: &spec.ContactInfo{
+				Name:  "john",
+				Email: "john@doe.rp",
+				URL:   "http://johndoe.org",
+			},
+			License: &spec.License{
+				Name: "MIT",
+				URL:  "http://mit.org",
+			},
+			Version: "1.0.0",
+		},
+	}
+	swo.Tags = []spec.Tag{spec.Tag{TagProps: spec.TagProps{
+		Name:        "users",
+		Description: "Managing users"}}}
 }
 
 type User struct {
