@@ -136,10 +136,7 @@ func main() {
 				},
 				Version: "1.0.0",
 			},
-		},
-		// Optionally, specifiy where the Swagger UI is located
-		SwaggerPath:     "/apidocs/",
-		SwaggerFilePath: "/Users/emicklei/Projects/swagger-ui/dist"}
+		}}
 	restfulspec.RegisterOpenAPIService(config, restful.DefaultContainer)
 
 	log.Printf("start listening on localhost:8080")
