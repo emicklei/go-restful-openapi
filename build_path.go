@@ -5,6 +5,9 @@ import (
 	"github.com/go-openapi/spec"
 )
 
+// KeyOpenAPITags is a Metadata key for a restful Route
+const KeyOpenAPITags = "openapi.tags"
+
 func buildPaths(ws *restful.WebService) spec.Paths {
 	p := spec.Paths{Paths: map[string]spec.PathItem{}}
 	for _, each := range ws.Routes() {
@@ -43,6 +46,13 @@ func buildOperation(ws *restful.WebService, r restful.Route) *spec.Operation {
 	o.Description = r.Doc
 	o.Consumes = r.Consumes
 	o.Produces = r.Produces
+	if r.Metadata != nil {
+		if tags, ok := r.Metadata[KeyOpenAPITags]; ok {
+			if tagList, ok := tags.([]string); ok {
+				o.Tags = tagList
+			}
+		}
+	}
 	// collect any path parameters
 	for _, param := range ws.PathParameters() {
 		o.Parameters = append(o.Parameters, buildParameter(param))
