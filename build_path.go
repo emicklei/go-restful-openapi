@@ -1,6 +1,7 @@
 package restfulspec
 
 import (
+	"reflect"
 	"strings"
 
 	restful "github.com/emicklei/go-restful"
@@ -10,12 +11,17 @@ import (
 // KeyOpenAPITags is a Metadata key for a restful Route
 const KeyOpenAPITags = "openapi.tags"
 
-func buildPaths(ws *restful.WebService) spec.Paths {
+func buildPathsAndDefs(ws *restful.WebService) (spec.Paths, spec.Definitions) {
 	p := spec.Paths{Paths: map[string]spec.PathItem{}}
+	d := spec.Definitions{}
 	for _, each := range ws.Routes() {
 		p.Paths[each.Path] = buildPathItem(ws, each)
+		definitions := buildDefinitions(ws, each)
+		for name, defn := range definitions {
+			d[name] = defn
+		}
 	}
-	return p
+	return p, d
 }
 
 func buildPathItem(ws *restful.WebService, r restful.Route) spec.PathItem {
@@ -94,5 +100,24 @@ func buildParameter(r *restful.Parameter) spec.Parameter {
 
 func buildResponse(e restful.ResponseError) (r spec.Response) {
 	r.Description = e.Message
+	if e.Model != nil {
+		st := reflect.TypeOf(e.Model)
+		modelName := modelBuilder{}.keyFrom(st)
+		r.Schema = &spec.Schema{}
+		r.Schema.Ref = spec.MustCreateRef("#/definitions/" + modelName)
+	}
 	return r
+}
+
+func buildDefinitions(ws *restful.WebService, r restful.Route) spec.Definitions {
+	definitions := spec.Definitions{}
+	for _, v := range r.ResponseErrors {
+		if v.Model == nil {
+			continue
+		}
+		st := reflect.TypeOf(v.Model)
+		mb := modelBuilder{Definitions: definitions, Config: nil}
+		mb.addModel(st, "")
+	}
+	return definitions
 }
