@@ -3,9 +3,9 @@ package restfulspec
 import restful "github.com/emicklei/go-restful"
 import "github.com/go-openapi/spec"
 
-// RegisterOpenAPIService adds the WebService that provides the API documentation of all services
+// NewOpenAPIService returns a new WebService that provides the API documentation of all services
 // conform the OpenAPI documentation specifcation.
-func RegisterOpenAPIService(config Config, wsContainer *restful.Container) {
+func NewOpenAPIService(config Config) *restful.WebService {
 
 	ws := new(restful.WebService)
 	ws.Path(config.APIPath)
@@ -14,17 +14,29 @@ func RegisterOpenAPIService(config Config, wsContainer *restful.Container) {
 		ws.Filter(enableCORS)
 	}
 
-	res := specResource{config: config, paths: spec.Paths{Paths: map[string]spec.PathItem{}}}
-	ws.Route(ws.GET("/").To(res.getSwagger))
+	// collect paths and model definitions to build Swagger object.
+	paths := &spec.Paths{Paths: map[string]spec.PathItem{}}
+	definitions := spec.Definitions{}
 
-	// TEMP
 	for _, each := range config.WebServices {
-		po := buildPaths(each)
-		for path, item := range po.Paths {
-			res.paths.Paths[path] = item
+		for path, item := range buildPaths(each).Paths {
+			paths.Paths[path] = item
+		}
+		for name, def := range buildDefinitions(each, config) {
+			definitions[name] = def
 		}
 	}
-	wsContainer.Add(ws)
+	swagger := &spec.Swagger{
+		SwaggerProps: spec.SwaggerProps{
+			Swagger:     "2.0",
+			Paths:       paths,
+			Definitions: definitions,
+		},
+	}
+	resource := specResource{swagger: swagger}
+	ws.Route(ws.GET("/").To(resource.getSwagger))
+
+	return ws
 }
 
 func enableCORS(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
@@ -39,19 +51,9 @@ func enableCORS(req *restful.Request, resp *restful.Response, chain *restful.Fil
 
 // specResource is a REST resource to serve the Open-API spec.
 type specResource struct {
-	config Config
-	paths  spec.Paths
+	swagger *spec.Swagger
 }
 
 func (s specResource) getSwagger(req *restful.Request, resp *restful.Response) {
-	sw := &spec.Swagger{
-		SwaggerProps: spec.SwaggerProps{
-			Swagger: "2.0",
-			Paths:   &(s.paths),
-		},
-	}
-	if s.config.PostBuildSwaggerObjectHandler != nil {
-		s.config.PostBuildSwaggerObjectHandler(sw)
-	}
-	resp.WriteAsJson(sw)
+	resp.WriteAsJson(s.swagger)
 }

@@ -28,7 +28,7 @@ func (u UserResource) WebService() *restful.WebService {
 		Doc("get all users").
 		Metadata(restfulspec.KeyOpenAPITags, tags).
 		Writes([]User{}).
-		Returns(200, "OK", nil))
+		Returns(200, "OK", []User{}))
 
 	ws.Route(ws.GET("/{user-id}").To(u.findUser).
 		// docs
@@ -36,6 +36,7 @@ func (u UserResource) WebService() *restful.WebService {
 		Param(ws.PathParameter("user-id", "identifier of the user").DataType("string")).
 		Metadata(restfulspec.KeyOpenAPITags, tags).
 		Writes(User{}). // on the response
+		Returns(200, "OK", User{}).
 		Returns(404, "Not Found", nil))
 
 	ws.Route(ws.PUT("/{user-id}").To(u.updateUser).
@@ -126,7 +127,7 @@ func main() {
 		WebServicesURL: "http://localhost:8080",
 		APIPath:        "/apidocs.json",
 		PostBuildSwaggerObjectHandler: enrichSwaggerObject}
-	restfulspec.RegisterOpenAPIService(config, restful.DefaultContainer)
+	restful.DefaultContainer.Add(restfulspec.NewOpenAPIService(config))
 
 	// Optionally, you can install the Swagger Service which provides a nice Web UI on your REST API
 	// You need to download the Swagger HTML5 assets and change the FilePath location in the config below.
@@ -160,5 +161,6 @@ func enrichSwaggerObject(swo *spec.Swagger) {
 }
 
 type User struct {
-	Id, Name string
+	Id   string `json:"id", description:"identifier of the user"`
+	Name string `json:"name", description:"name of the user"`
 }

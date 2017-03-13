@@ -1,6 +1,7 @@
 package restfulspec
 
 import (
+	"reflect"
 	"strings"
 
 	restful "github.com/emicklei/go-restful"
@@ -94,5 +95,11 @@ func buildParameter(r *restful.Parameter) spec.Parameter {
 
 func buildResponse(e restful.ResponseError) (r spec.Response) {
 	r.Description = e.Message
+	if e.Model != nil {
+		st := reflect.TypeOf(e.Model)
+		modelName := definitionBuilder{}.keyFrom(st)
+		r.Schema = new(spec.Schema)
+		r.Schema.Ref = spec.MustCreateRef("#/definitions/" + modelName)
+	}
 	return r
 }
