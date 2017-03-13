@@ -1,6 +1,7 @@
 package restfulspec
 
 import (
+	"reflect"
 	"strings"
 
 	restful "github.com/emicklei/go-restful"
@@ -10,37 +11,40 @@ import (
 // KeyOpenAPITags is a Metadata key for a restful Route
 const KeyOpenAPITags = "openapi.tags"
 
-func buildPaths(ws *restful.WebService) spec.Paths {
+func buildPathsAndDefs(ws *restful.WebService) (spec.Paths, spec.Definitions) {
 	p := spec.Paths{Paths: map[string]spec.PathItem{}}
+	d := spec.Definitions{}
 	for _, each := range ws.Routes() {
-		p.Paths[each.Path] = buildPathItem(ws, each)
-	}
-	return p
-}
+		op := buildOperation(ws, each)
+		existingPathItem, ok := p.Paths[each.Path]
+		if !ok {
+			existingPathItem = spec.PathItem{}
+		}
 
-func buildPathItem(ws *restful.WebService, r restful.Route) spec.PathItem {
-	op := buildOperation(ws, r)
-	props := spec.PathItemProps{}
-	switch r.Method {
-	case "GET":
-		props.Get = op
-	case "POST":
-		props.Post = op
-	case "PUT":
-		props.Put = op
-	case "DELETE":
-		props.Delete = op
-	case "PATCH":
-		props.Patch = op
-	case "OPTIONS":
-		props.Options = op
-	case "HEAD":
-		props.Head = op
+		switch each.Method {
+		case "GET":
+			existingPathItem.Get = op
+		case "POST":
+			existingPathItem.Post = op
+		case "PUT":
+			existingPathItem.Put = op
+		case "DELETE":
+			existingPathItem.Delete = op
+		case "PATCH":
+			existingPathItem.Patch = op
+		case "OPTIONS":
+			existingPathItem.Options = op
+		case "HEAD":
+			existingPathItem.Head = op
+		}
+
+		p.Paths[each.Path] = existingPathItem
+		definitions := buildDefinitions(ws, each)
+		for name, defn := range definitions {
+			d[name] = defn
+		}
 	}
-	p := spec.PathItem{
-		PathItemProps: props,
-	}
-	return p
+	return p, d
 }
 
 func buildOperation(ws *restful.WebService, r restful.Route) *spec.Operation {
@@ -94,5 +98,24 @@ func buildParameter(r *restful.Parameter) spec.Parameter {
 
 func buildResponse(e restful.ResponseError) (r spec.Response) {
 	r.Description = e.Message
+	if e.Model != nil {
+		st := reflect.TypeOf(e.Model)
+		modelName := modelBuilder{}.keyFrom(st)
+		r.Schema = &spec.Schema{}
+		r.Schema.Ref = spec.MustCreateRef("#/definitions/" + modelName)
+	}
 	return r
+}
+
+func buildDefinitions(ws *restful.WebService, r restful.Route) spec.Definitions {
+	definitions := spec.Definitions{}
+	for _, v := range r.ResponseErrors {
+		if v.Model == nil {
+			continue
+		}
+		st := reflect.TypeOf(v.Model)
+		mb := modelBuilder{Definitions: definitions, Config: nil}
+		mb.addModel(st, "")
+	}
+	return definitions
 }

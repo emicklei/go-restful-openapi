@@ -22,6 +22,10 @@ type PostBuildSwaggerObjectFunc func(s *spec.Swagger)
 
 // Config holds service api metadata.
 type Config struct {
+	// [optional] path where the swagger UI will be served, e.g. /swagger
+	SwaggerPath string
+	// [optional] location of folder containing Swagger HTML5 application index.html
+	SwaggerFilePath string
 	// WebServicesURL is the url where the services are available, e.g. http://localhost:8080
 	// if left empty then the basePath of Swagger is taken from the actual request
 	WebServicesURL string
@@ -39,4 +43,6 @@ type Config struct {
 	ModelTypeNameHandler MapModelTypeNameFunc
 	// [optional] If set then call this function with the generated Swagger Object
 	PostBuildSwaggerObjectHandler PostBuildSwaggerObjectFunc
+	// Info sets top-level information about this API
+	Info spec.Info
 }
