@@ -15,38 +15,36 @@ func buildPathsAndDefs(ws *restful.WebService) (spec.Paths, spec.Definitions) {
 	p := spec.Paths{Paths: map[string]spec.PathItem{}}
 	d := spec.Definitions{}
 	for _, each := range ws.Routes() {
-		p.Paths[each.Path] = buildPathItem(ws, each)
+		op := buildOperation(ws, each)
+		existingPathItem, ok := p.Paths[each.Path]
+		if !ok {
+			existingPathItem = spec.PathItem{}
+		}
+
+		switch each.Method {
+		case "GET":
+			existingPathItem.Get = op
+		case "POST":
+			existingPathItem.Post = op
+		case "PUT":
+			existingPathItem.Put = op
+		case "DELETE":
+			existingPathItem.Delete = op
+		case "PATCH":
+			existingPathItem.Patch = op
+		case "OPTIONS":
+			existingPathItem.Options = op
+		case "HEAD":
+			existingPathItem.Head = op
+		}
+
+		p.Paths[each.Path] = existingPathItem
 		definitions := buildDefinitions(ws, each)
 		for name, defn := range definitions {
 			d[name] = defn
 		}
 	}
 	return p, d
-}
-
-func buildPathItem(ws *restful.WebService, r restful.Route) spec.PathItem {
-	op := buildOperation(ws, r)
-	props := spec.PathItemProps{}
-	switch r.Method {
-	case "GET":
-		props.Get = op
-	case "POST":
-		props.Post = op
-	case "PUT":
-		props.Put = op
-	case "DELETE":
-		props.Delete = op
-	case "PATCH":
-		props.Patch = op
-	case "OPTIONS":
-		props.Options = op
-	case "HEAD":
-		props.Head = op
-	}
-	p := spec.PathItem{
-		PathItemProps: props,
-	}
-	return p
 }
 
 func buildOperation(ws *restful.WebService, r restful.Route) *spec.Operation {
