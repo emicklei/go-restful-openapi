@@ -14,16 +14,19 @@ type UserResource struct {
 	users map[string]User
 }
 
-func (u UserResource) Register() {
+func (u UserResource) WebService() *restful.WebService {
 	ws := new(restful.WebService)
 	ws.
 		Path("/users").
 		Consumes(restful.MIME_XML, restful.MIME_JSON).
 		Produces(restful.MIME_JSON, restful.MIME_XML) // you can specify this per route as well
 
+	tags := []string{"users"}
+
 	ws.Route(ws.GET("/").To(u.findAllUsers).
 		// docs
 		Doc("get all users").
+		Metadata(restfulspec.KeyOpenAPITags, tags).
 		Writes([]User{}).
 		Returns(200, "OK", nil))
 
@@ -31,6 +34,7 @@ func (u UserResource) Register() {
 		// docs
 		Doc("get a user").
 		Param(ws.PathParameter("user-id", "identifier of the user").DataType("string")).
+		Metadata(restfulspec.KeyOpenAPITags, tags).
 		Writes(User{}). // on the response
 		Returns(404, "Not Found", nil))
 
@@ -38,19 +42,22 @@ func (u UserResource) Register() {
 		// docs
 		Doc("update a user").
 		Param(ws.PathParameter("user-id", "identifier of the user").DataType("string")).
+		Metadata(restfulspec.KeyOpenAPITags, tags).
 		Reads(User{})) // from the request
 
 	ws.Route(ws.PUT("").To(u.createUser).
 		// docs
 		Doc("create a user").
+		Metadata(restfulspec.KeyOpenAPITags, tags).
 		Reads(User{})) // from the request
 
 	ws.Route(ws.DELETE("/{user-id}").To(u.removeUser).
 		// docs
 		Doc("delete a user").
+		Metadata(restfulspec.KeyOpenAPITags, tags).
 		Param(ws.PathParameter("user-id", "identifier of the user").DataType("string")))
 
-	restful.Add(ws) // to the default container
+	return ws
 }
 
 // GET http://localhost:8080/users
@@ -112,17 +119,19 @@ func (u *UserResource) removeUser(request *restful.Request, response *restful.Re
 
 func main() {
 	u := UserResource{map[string]User{}}
-	u.Register()
+	restful.DefaultContainer.Add(u.WebService())
 
-	// Optionally, you can install the Swagger Service which provides a nice Web UI on your REST API
-	// You need to download the Swagger HTML5 assets and change the FilePath location in the config below.
-	// Open http://localhost:8080/apidocs and enter http://localhost:8080/apidocs.json in the api input field.
 	config := restfulspec.Config{
 		WebServices:    restful.RegisteredWebServices(), // you control what services are visible
 		WebServicesURL: "http://localhost:8080",
 		APIPath:        "/apidocs.json",
 		PostBuildSwaggerObjectHandler: enrichSwaggerObject}
 	restfulspec.RegisterOpenAPIService(config, restful.DefaultContainer)
+
+	// Optionally, you can install the Swagger Service which provides a nice Web UI on your REST API
+	// You need to download the Swagger HTML5 assets and change the FilePath location in the config below.
+	// Open http://localhost:8080/apidocs/?url=http://localhost:8080/apidocs.json
+	http.Handle("/apidocs/", http.StripPrefix("/apidocs/", http.FileServer(http.Dir("/Users/emicklei/xProjects/swagger-ui/dist"))))
 
 	log.Printf("start listening on localhost:8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
