@@ -14,34 +14,35 @@ const KeyOpenAPITags = "openapi.tags"
 func buildPaths(ws *restful.WebService) spec.Paths {
 	p := spec.Paths{Paths: map[string]spec.PathItem{}}
 	for _, each := range ws.Routes() {
-		p.Paths[each.Path] = buildPathItem(ws, each)
+		existingPathItem, ok := p.Paths[each.Path]
+		if !ok {
+			existingPathItem = spec.PathItem{}
+		}
+		p.Paths[each.Path] = buildPathItem(ws, each, existingPathItem)
 	}
 	return p
 }
 
-func buildPathItem(ws *restful.WebService, r restful.Route) spec.PathItem {
+func buildPathItem(ws *restful.WebService, r restful.Route, existingPathItem spec.PathItem) spec.PathItem {
+
 	op := buildOperation(ws, r)
-	props := spec.PathItemProps{}
 	switch r.Method {
 	case "GET":
-		props.Get = op
+		existingPathItem.Get = op
 	case "POST":
-		props.Post = op
+		existingPathItem.Post = op
 	case "PUT":
-		props.Put = op
+		existingPathItem.Put = op
 	case "DELETE":
-		props.Delete = op
+		existingPathItem.Delete = op
 	case "PATCH":
-		props.Patch = op
+		existingPathItem.Patch = op
 	case "OPTIONS":
-		props.Options = op
+		existingPathItem.Options = op
 	case "HEAD":
-		props.Head = op
+		existingPathItem.Head = op
 	}
-	p := spec.PathItem{
-		PathItemProps: props,
-	}
-	return p
+	return existingPathItem
 }
 
 func buildOperation(ws *restful.WebService, r restful.Route) *spec.Operation {
