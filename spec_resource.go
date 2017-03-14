@@ -1,7 +1,9 @@
 package restfulspec
 
-import restful "github.com/emicklei/go-restful"
-import "github.com/go-openapi/spec"
+import (
+	restful "github.com/emicklei/go-restful"
+	"github.com/go-openapi/spec"
+)
 
 // NewOpenAPIService returns a new WebService that provides the API documentation of all services
 // conform the OpenAPI documentation specifcation.
@@ -14,6 +16,14 @@ func NewOpenAPIService(config Config) *restful.WebService {
 		ws.Filter(enableCORS)
 	}
 
+	swagger := GetSwaggerSpec(config)
+	resource := specResource{swagger: swagger}
+	ws.Route(ws.GET("/").To(resource.getSwagger))
+	return ws
+}
+
+// GetSwaggerSpec returns a Swagger object for all services' API endpoints.
+func GetSwaggerSpec(config Config) *spec.Swagger {
 	// collect paths and model definitions to build Swagger object.
 	paths := &spec.Paths{Paths: map[string]spec.PathItem{}}
 	definitions := spec.Definitions{}
@@ -31,12 +41,13 @@ func NewOpenAPIService(config Config) *restful.WebService {
 			Swagger:     "2.0",
 			Paths:       paths,
 			Definitions: definitions,
+			Info:        &config.Info,
 		},
 	}
-	resource := specResource{swagger: swagger}
-	ws.Route(ws.GET("/").To(resource.getSwagger))
-
-	return ws
+	if config.PostBuildSwaggerObjectHandler != nil {
+		config.PostBuildSwaggerObjectHandler(swagger)
+	}
+	return swagger
 }
 
 func enableCORS(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {

@@ -39,4 +39,6 @@ type Config struct {
 	ModelTypeNameHandler MapModelTypeNameFunc
 	// [optional] If set then call this function with the generated Swagger Object
 	PostBuildSwaggerObjectHandler PostBuildSwaggerObjectFunc
+	// Info sets top-level information about this API
+	Info spec.Info
 }
