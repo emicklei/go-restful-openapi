@@ -41,7 +41,6 @@ func GetSwaggerSpec(config Config) *spec.Swagger {
 			Swagger:     "2.0",
 			Paths:       paths,
 			Definitions: definitions,
-			Info:        &config.Info,
 		},
 	}
 	if config.PostBuildSwaggerObjectHandler != nil {
