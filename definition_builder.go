@@ -146,6 +146,10 @@ func (b definitionBuilder) buildProperty(field reflect.StructField, model *spec.
 		modelDescription = tag
 	}
 
+	setPropertyMetadata(&prop, field)
+	if prop.Type != nil {
+		return jsonName, modelDescription, prop
+	}
 	fieldType := field.Type
 
 	// check if type is doing its own marshalling
@@ -225,6 +229,7 @@ func hasNamedJSONTag(field reflect.StructField) bool {
 }
 
 func (b definitionBuilder) buildStructTypeProperty(field reflect.StructField, jsonName string, model *spec.Schema) (nameJson string, prop spec.Schema) {
+	setPropertyMetadata(&prop, field)
 	fieldType := field.Type
 	// check for anonymous
 	if len(fieldType.Name()) == 0 {
@@ -275,6 +280,7 @@ func (b definitionBuilder) buildStructTypeProperty(field reflect.StructField, js
 }
 
 func (b definitionBuilder) buildArrayTypeProperty(field reflect.StructField, jsonName, modelName string) (nameJson string, prop spec.Schema) {
+	setPropertyMetadata(&prop, field)
 	fieldType := field.Type
 	if fieldType.Elem().Kind() == reflect.Uint8 {
 		stringt := "string"
@@ -305,6 +311,7 @@ func (b definitionBuilder) buildArrayTypeProperty(field reflect.StructField, jso
 }
 
 func (b definitionBuilder) buildPointerTypeProperty(field reflect.StructField, jsonName, modelName string) (nameJson string, prop spec.Schema) {
+	setPropertyMetadata(&prop, field)
 	fieldType := field.Type
 
 	// override type of pointer to list-likes

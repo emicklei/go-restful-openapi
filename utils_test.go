@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	restful "github.com/emicklei/go-restful"
+	"github.com/go-openapi/spec"
 )
 
 func dummy(i *restful.Request, o *restful.Response) {}
@@ -84,4 +85,15 @@ func mergeStrings(left, right []string) (merged []string) {
 		include(each)
 	}
 	return
+}
+
+func definitionsFromStructWithConfig(sample interface{}, config Config) spec.Definitions {
+	definitions := spec.Definitions{}
+	builder := definitionBuilder{Definitions: definitions, Config: config}
+	builder.addModelFrom(sample)
+	return definitions
+}
+
+func definitionsFromStruct(sample interface{}) spec.Definitions {
+	return definitionsFromStructWithConfig(sample, Config{})
 }

@@ -86,6 +86,7 @@ func buildParameter(r *restful.Parameter) spec.Parameter {
 	p := spec.Parameter{}
 	param := r.Data()
 	p.In = asParamType(param.Kind)
+	p.Type = param.DataType
 	p.Description = param.Description
 	p.Name = param.Name
 	p.Required = param.Required
