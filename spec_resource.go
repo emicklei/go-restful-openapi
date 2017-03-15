@@ -16,14 +16,14 @@ func NewOpenAPIService(config Config) *restful.WebService {
 		ws.Filter(enableCORS)
 	}
 
-	swagger := GetSwaggerSpec(config)
+	swagger := BuildSwagger(config)
 	resource := specResource{swagger: swagger}
 	ws.Route(ws.GET("/").To(resource.getSwagger))
 	return ws
 }
 
-// GetSwaggerSpec returns a Swagger object for all services' API endpoints.
-func GetSwaggerSpec(config Config) *spec.Swagger {
+// BuildSwagger returns a Swagger object for all services' API endpoints.
+func BuildSwagger(config Config) *spec.Swagger {
 	// collect paths and model definitions to build Swagger object.
 	paths := &spec.Paths{Paths: map[string]spec.PathItem{}}
 	definitions := spec.Definitions{}
