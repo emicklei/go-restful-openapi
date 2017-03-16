@@ -70,7 +70,7 @@ func buildOperation(ws *restful.WebService, r restful.Route) *spec.Operation {
 		o.Parameters = append(o.Parameters, buildParameter(each))
 	}
 	o.Responses = new(spec.Responses)
-	props := o.Responses.ResponsesProps
+	props := &o.Responses.ResponsesProps
 	props.StatusCodeResponses = map[int]spec.Response{}
 	for k, v := range r.ResponseErrors {
 		r := buildResponse(v)
