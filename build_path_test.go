@@ -35,6 +35,7 @@ func TestMultipleMethodsRouteToPath(t *testing.T) {
 	ws.Route(ws.POST("/a/b").To(dummy).
 		Doc("post a b test").
 		Returns(200, "list of a b tests", []Sample{}).
+		Returns(500, "internal server error", []Sample{}).
 		Writes([]Sample{}))
 
 	p := buildPaths(ws)
@@ -45,5 +46,8 @@ func TestMultipleMethodsRouteToPath(t *testing.T) {
 	}
 	if p.Paths["/tests/a/a/b"].Post.Description != "post a b test" {
 		t.Errorf("POST description incorrect")
+	}
+	if _, exists := p.Paths["/tests/a/a/b"].Post.Responses.StatusCodeResponses[500]; !exists {
+		t.Errorf("Response code 500 not added to spec.")
 	}
 }
