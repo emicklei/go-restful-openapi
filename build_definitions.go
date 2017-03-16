@@ -7,7 +7,7 @@ import (
 	"github.com/go-openapi/spec"
 )
 
-func buildDefinitions(ws *restful.WebService, cfg Config) (definitions spec.Definitions) {
+func BuildDefinitions(ws *restful.WebService, cfg Config) (definitions spec.Definitions) {
 	definitions = spec.Definitions{}
 	for _, each := range ws.Routes() {
 		addDefinitionsFromRouteTo(each, cfg, definitions)

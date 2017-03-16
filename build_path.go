@@ -11,7 +11,7 @@ import (
 // KeyOpenAPITags is a Metadata key for a restful Route
 const KeyOpenAPITags = "openapi.tags"
 
-func buildPaths(ws *restful.WebService) spec.Paths {
+func BuildPaths(ws *restful.WebService) spec.Paths {
 	p := spec.Paths{Paths: map[string]spec.PathItem{}}
 	for _, each := range ws.Routes() {
 		existingPathItem, ok := p.Paths[each.Path]

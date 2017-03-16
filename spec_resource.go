@@ -14,29 +14,33 @@ func NewOpenAPIService(config Config) *restful.WebService {
 		ws.Filter(enableCORS)
 	}
 
+	resource := specResource{swagger: NewOpenAPISpecFromServices(config)}
+	ws.Route(ws.GET("/").To(resource.getSwagger))
+
+	return ws
+}
+
+func NewOpenAPISpecFromServices(config Config) *spec.Swagger {
+
 	// collect paths and model definitions to build Swagger object.
 	paths := &spec.Paths{Paths: map[string]spec.PathItem{}}
 	definitions := spec.Definitions{}
 
 	for _, each := range config.WebServices {
-		for path, item := range buildPaths(each).Paths {
+		for path, item := range BuildPaths(each).Paths {
 			paths.Paths[path] = item
 		}
-		for name, def := range buildDefinitions(each, config) {
+		for name, def := range BuildDefinitions(each, config) {
 			definitions[name] = def
 		}
 	}
-	swagger := &spec.Swagger{
+	return &spec.Swagger{
 		SwaggerProps: spec.SwaggerProps{
 			Swagger:     "2.0",
 			Paths:       paths,
 			Definitions: definitions,
 		},
 	}
-	resource := specResource{swagger: swagger}
-	ws.Route(ws.GET("/").To(resource.getSwagger))
-
-	return ws
 }
 
 func enableCORS(req *restful.Request, resp *restful.Response, chain *restful.FilterChain) {
