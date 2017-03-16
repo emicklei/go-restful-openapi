@@ -19,7 +19,7 @@ func TestRouteToPath(t *testing.T) {
 		Returns(200, "list of a b tests", []Sample{}).
 		Writes([]Sample{}))
 
-	p := buildPaths(ws)
+	p := BuildPaths(ws)
 	t.Log(asJSON(p))
 }
 
@@ -38,7 +38,7 @@ func TestMultipleMethodsRouteToPath(t *testing.T) {
 		Returns(500, "internal server error", []Sample{}).
 		Writes([]Sample{}))
 
-	p := buildPaths(ws)
+	p := BuildPaths(ws)
 	t.Log(asJSON(p))
 
 	if p.Paths["/tests/a/a/b"].Get.Description != "get a b test" {
