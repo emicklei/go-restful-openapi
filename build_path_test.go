@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	restful "github.com/emicklei/go-restful"
+	"github.com/go-openapi/spec"
 )
 
 func TestRouteToPath(t *testing.T) {
@@ -57,6 +58,7 @@ func TestMultipleMethodsRouteToPath(t *testing.T) {
 		Doc("post a b test").
 		Returns(200, "list of a b tests", []Sample{}).
 		Returns(500, "internal server error", []Sample{}).
+		Reads(Sample{}).
 		Writes([]Sample{}))
 
 	p := buildPaths(ws, Config{})
@@ -70,5 +72,16 @@ func TestMultipleMethodsRouteToPath(t *testing.T) {
 	}
 	if _, exists := p.Paths["/tests/a/a/b"].Post.Responses.StatusCodeResponses[500]; !exists {
 		t.Errorf("Response code 500 not added to spec.")
+	}
+
+	expectedRef := spec.MustCreateRef("#/definitions/restfulspec.Sample")
+	postBodyparam := p.Paths["/tests/a/a/b"].Post.Parameters[0]
+	postBodyRef := postBodyparam.Schema.Ref
+	if postBodyRef.String() != expectedRef.String() {
+		t.Errorf("Expected: %s, Got: %s", expectedRef.String(), postBodyRef.String())
+	}
+
+	if postBodyparam.Format != "" || postBodyparam.Type != "" || postBodyparam.Default != nil {
+		t.Errorf("Invalid parameter property is set on body property")
 	}
 }
