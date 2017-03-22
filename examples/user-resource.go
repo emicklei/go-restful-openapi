@@ -76,7 +76,7 @@ func (u UserResource) findAllUsers(request *restful.Request, response *restful.R
 func (u UserResource) findUser(request *restful.Request, response *restful.Response) {
 	id := request.PathParameter("user-id")
 	usr := u.users[id]
-	if len(usr.Id) == 0 {
+	if len(usr.ID) == 0 {
 		response.WriteErrorString(http.StatusNotFound, "User could not be found.")
 	} else {
 		response.WriteEntity(usr)
@@ -90,7 +90,7 @@ func (u *UserResource) updateUser(request *restful.Request, response *restful.Re
 	usr := new(User)
 	err := request.ReadEntity(&usr)
 	if err == nil {
-		u.users[usr.Id] = *usr
+		u.users[usr.ID] = *usr
 		response.WriteEntity(usr)
 	} else {
 		response.WriteError(http.StatusInternalServerError, err)
@@ -101,10 +101,10 @@ func (u *UserResource) updateUser(request *restful.Request, response *restful.Re
 // <User><Id>1</Id><Name>Melissa</Name></User>
 //
 func (u *UserResource) createUser(request *restful.Request, response *restful.Response) {
-	usr := User{Id: request.PathParameter("user-id")}
+	usr := User{ID: request.PathParameter("user-id")}
 	err := request.ReadEntity(&usr)
 	if err == nil {
-		u.users[usr.Id] = usr
+		u.users[usr.ID] = usr
 		response.WriteHeaderAndEntity(http.StatusCreated, usr)
 	} else {
 		response.WriteError(http.StatusInternalServerError, err)
@@ -160,7 +160,8 @@ func enrichSwaggerObject(swo *spec.Swagger) {
 		Description: "Managing users"}}}
 }
 
+// User is just a sample type
 type User struct {
-	Id   string `json:"id", description:"identifier of the user"`
-	Name string `json:"name", description:"name of the user"`
+	ID   string `json:"id" description:"identifier of the user"`
+	Name string `json:"name" description:"name of the user"`
 }
