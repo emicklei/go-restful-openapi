@@ -63,11 +63,11 @@ func buildOperation(ws *restful.WebService, r restful.Route) *spec.Operation {
 	}
 	// collect any path parameters
 	for _, param := range ws.PathParameters() {
-		o.Parameters = append(o.Parameters, buildParameter(param))
+		o.Parameters = append(o.Parameters, buildParameter(r, param))
 	}
 	// route specific params
 	for _, each := range r.ParameterDocs {
-		o.Parameters = append(o.Parameters, buildParameter(each))
+		o.Parameters = append(o.Parameters, buildParameter(r, each))
 	}
 	o.Responses = new(spec.Responses)
 	props := &o.Responses.ResponsesProps
@@ -82,9 +82,9 @@ func buildOperation(ws *restful.WebService, r restful.Route) *spec.Operation {
 	return o
 }
 
-func buildParameter(r *restful.Parameter) spec.Parameter {
+func buildParameter(r restful.Route, restfulParam *restful.Parameter) spec.Parameter {
 	p := spec.Parameter{}
-	param := r.Data()
+	param := restfulParam.Data()
 	p.In = asParamType(param.Kind)
 	p.Type = param.DataType
 	p.Description = param.Description
@@ -92,6 +92,10 @@ func buildParameter(r *restful.Parameter) spec.Parameter {
 	p.Required = param.Required
 	p.Default = param.DefaultValue
 	p.Format = param.DataFormat
+	if p.In == "body" && r.ReadSample != nil && p.Type == reflect.TypeOf(r.ReadSample).String() {
+		p.Schema = new(spec.Schema)
+		p.Schema.Ref = spec.MustCreateRef("#/definitions/" + p.Type)
+	}
 	return p
 }
 
