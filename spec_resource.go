@@ -29,7 +29,7 @@ func BuildSwagger(config Config) *spec.Swagger {
 	definitions := spec.Definitions{}
 
 	for _, each := range config.WebServices {
-		for path, item := range buildPaths(each).Paths {
+		for path, item := range buildPaths(each, config).Paths {
 			paths.Paths[path] = item
 		}
 		for name, def := range buildDefinitions(each, config) {
