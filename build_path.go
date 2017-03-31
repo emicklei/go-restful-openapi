@@ -103,6 +103,11 @@ func buildResponse(e restful.ResponseError) (r spec.Response) {
 	r.Description = e.Message
 	if e.Model != nil {
 		st := reflect.TypeOf(e.Model)
+		if st.Kind() == reflect.Ptr {
+			// For pointer type, use element type as the key; otherwise we'll
+			// endup with '#/definitions/*Type' which violates openapi spec.
+			st = st.Elem()
+		}
 		modelName := definitionBuilder{}.keyFrom(st)
 		r.Schema = new(spec.Schema)
 		r.Schema.Ref = spec.MustCreateRef("#/definitions/" + modelName)
