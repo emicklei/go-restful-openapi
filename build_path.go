@@ -11,21 +11,20 @@ import (
 // KeyOpenAPITags is a Metadata key for a restful Route
 const KeyOpenAPITags = "openapi.tags"
 
-func buildPaths(ws *restful.WebService) spec.Paths {
+func buildPaths(ws *restful.WebService, cfg Config) spec.Paths {
 	p := spec.Paths{Paths: map[string]spec.PathItem{}}
 	for _, each := range ws.Routes() {
 		existingPathItem, ok := p.Paths[each.Path]
 		if !ok {
 			existingPathItem = spec.PathItem{}
 		}
-		p.Paths[each.Path] = buildPathItem(ws, each, existingPathItem)
+		p.Paths[each.Path] = buildPathItem(ws, each, existingPathItem, cfg)
 	}
 	return p
 }
 
-func buildPathItem(ws *restful.WebService, r restful.Route, existingPathItem spec.PathItem) spec.PathItem {
-
-	op := buildOperation(ws, r)
+func buildPathItem(ws *restful.WebService, r restful.Route, existingPathItem spec.PathItem, cfg Config) spec.PathItem {
+	op := buildOperation(ws, r, cfg)
 	switch r.Method {
 	case "GET":
 		existingPathItem.Get = op
@@ -45,7 +44,7 @@ func buildPathItem(ws *restful.WebService, r restful.Route, existingPathItem spe
 	return existingPathItem
 }
 
-func buildOperation(ws *restful.WebService, r restful.Route) *spec.Operation {
+func buildOperation(ws *restful.WebService, r restful.Route, cfg Config) *spec.Operation {
 	o := spec.NewOperation(r.Operation)
 	o.Description = r.Doc
 	// take the first line to be the summary
@@ -63,17 +62,17 @@ func buildOperation(ws *restful.WebService, r restful.Route) *spec.Operation {
 	}
 	// collect any path parameters
 	for _, param := range ws.PathParameters() {
-		o.Parameters = append(o.Parameters, buildParameter(r, param))
+		o.Parameters = append(o.Parameters, buildParameter(r, param, cfg))
 	}
 	// route specific params
 	for _, each := range r.ParameterDocs {
-		o.Parameters = append(o.Parameters, buildParameter(r, each))
+		o.Parameters = append(o.Parameters, buildParameter(r, each, cfg))
 	}
 	o.Responses = new(spec.Responses)
 	props := &o.Responses.ResponsesProps
 	props.StatusCodeResponses = map[int]spec.Response{}
 	for k, v := range r.ResponseErrors {
-		r := buildResponse(v)
+		r := buildResponse(v, cfg)
 		props.StatusCodeResponses[k] = r
 		if 200 == k { // any 2xx code?
 			o.Responses.Default = &r
@@ -82,7 +81,7 @@ func buildOperation(ws *restful.WebService, r restful.Route) *spec.Operation {
 	return o
 }
 
-func buildParameter(r restful.Route, restfulParam *restful.Parameter) spec.Parameter {
+func buildParameter(r restful.Route, restfulParam *restful.Parameter, cfg Config) spec.Parameter {
 	p := spec.Parameter{}
 	param := restfulParam.Data()
 	p.In = asParamType(param.Kind)
@@ -99,7 +98,7 @@ func buildParameter(r restful.Route, restfulParam *restful.Parameter) spec.Param
 	return p
 }
 
-func buildResponse(e restful.ResponseError) (r spec.Response) {
+func buildResponse(e restful.ResponseError, cfg Config) (r spec.Response) {
 	r.Description = e.Message
 	if e.Model != nil {
 		st := reflect.TypeOf(e.Model)
@@ -108,7 +107,7 @@ func buildResponse(e restful.ResponseError) (r spec.Response) {
 			// endup with '#/definitions/*Type' which violates openapi spec.
 			st = st.Elem()
 		}
-		modelName := definitionBuilder{}.keyFrom(st)
+		modelName := definitionBuilder{Config: cfg}.keyFrom(st)
 		r.Schema = new(spec.Schema)
 		r.Schema.Ref = spec.MustCreateRef("#/definitions/" + modelName)
 	}
