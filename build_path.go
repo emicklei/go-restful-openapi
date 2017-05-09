@@ -107,9 +107,18 @@ func buildResponse(e restful.ResponseError, cfg Config) (r spec.Response) {
 			// endup with '#/definitions/*Type' which violates openapi spec.
 			st = st.Elem()
 		}
-		modelName := definitionBuilder{Config: cfg}.keyFrom(st)
 		r.Schema = new(spec.Schema)
-		r.Schema.Ref = spec.MustCreateRef("#/definitions/" + modelName)
+		if st.Kind() == reflect.Array || st.Kind() == reflect.Slice {
+			modelName := definitionBuilder{}.keyFrom(st.Elem())
+			r.Schema.Type = []string{"array"}
+			r.Schema.Items = &spec.SchemaOrArray{
+				Schema: &spec.Schema{},
+			}
+			r.Schema.Items.Schema.Ref = spec.MustCreateRef("#/definitions/" + modelName)
+		} else {
+			modelName := definitionBuilder{}.keyFrom(st)
+			r.Schema.Ref = spec.MustCreateRef("#/definitions/" + modelName)
+		}
 	}
 	return r
 }

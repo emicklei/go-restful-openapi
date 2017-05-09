@@ -21,6 +21,17 @@ func TestRouteToPath(t *testing.T) {
 
 	p := buildPaths(ws, Config{})
 	t.Log(asJSON(p))
+
+	if p.Paths["/tests/{v}/a/{b}"].Get.Description != "get the a b test" {
+		t.Errorf("GET description incorrect")
+	}
+	response := p.Paths["/tests/{v}/a/{b}"].Get.Responses.StatusCodeResponses[200]
+	if response.Schema.Type[0] != "array" {
+		t.Errorf("response type incorrect")
+	}
+	if response.Schema.Items.Schema.Ref.String() != "#/definitions/restfulspec.Sample" {
+		t.Errorf("response element type incorrect")
+	}
 }
 
 func TestMultipleMethodsRouteToPath(t *testing.T) {
