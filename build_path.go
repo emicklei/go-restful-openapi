@@ -3,6 +3,7 @@ package restfulspec
 import (
 	"net/http"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -49,9 +50,9 @@ func buildPathItem(ws *restful.WebService, r restful.Route, existingPathItem spe
 func buildOperation(ws *restful.WebService, r restful.Route, cfg Config) *spec.Operation {
 	o := spec.NewOperation(r.Operation)
 	o.Description = r.Doc
-	// take the first line to be the summary
+	// take the first line (stripping HTML tags) to be the summary
 	if lines := strings.Split(r.Doc, "\n"); len(lines) > 0 {
-		o.Summary = lines[0]
+		o.Summary = stripTags(lines[0])
 	}
 	o.Consumes = r.Consumes
 	o.Produces = r.Produces
@@ -143,4 +144,11 @@ func buildResponse(e restful.ResponseError, cfg Config) (r spec.Response) {
 		}
 	}
 	return r
+}
+
+// stripTags takes a snippet of HTML and returns only the text content.
+// For example, `<b>&lt;Hi!&gt;</b> <br>` -> `&lt;Hi!&gt; `.
+func stripTags(html string) string {
+	re := regexp.MustCompile("<[^>]*>")
+	return re.ReplaceAllString(html, "")
 }
