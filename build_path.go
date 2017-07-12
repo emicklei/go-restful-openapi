@@ -111,9 +111,11 @@ func buildParameter(r restful.Route, restfulParam *restful.Parameter, cfg Config
 	p.Required = param.Required
 	p.Default = stringAutoType(param.DefaultValue)
 	p.Format = param.DataFormat
+
 	if p.In == "body" && r.ReadSample != nil && p.Type == reflect.TypeOf(r.ReadSample).String() {
 		p.Schema = new(spec.Schema)
 		p.Schema.Ref = spec.MustCreateRef("#/definitions/" + p.Type)
+		p.SimpleSchema = spec.SimpleSchema{}
 	}
 	return p
 }
