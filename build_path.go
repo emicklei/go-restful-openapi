@@ -3,6 +3,7 @@ package restfulspec
 import (
 	"net/http"
 	"reflect"
+	"strconv"
 	"strings"
 
 	restful "github.com/emicklei/go-restful"
@@ -93,7 +94,15 @@ func buildParameter(r restful.Route, restfulParam *restful.Parameter, cfg Config
 	p.Description = param.Description
 	p.Name = param.Name
 	p.Required = param.Required
-	p.Default = param.DefaultValue
+	if param.DefaultValue != "" {
+		if parsedInt, err := strconv.ParseInt(param.DefaultValue, 10, 64); err == nil {
+			p.Default = parsedInt
+		} else if parsedBool, err := strconv.ParseBool(param.DefaultValue); err == nil {
+			p.Default = parsedBool
+		} else {
+			p.Default = param.DefaultValue
+		}
+	}
 	p.Format = param.DataFormat
 	if p.In == "body" && r.ReadSample != nil && p.Type == reflect.TypeOf(r.ReadSample).String() {
 		p.Schema = new(spec.Schema)
