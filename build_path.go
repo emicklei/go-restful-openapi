@@ -1,6 +1,7 @@
 package restfulspec
 
 import (
+	"net/http"
 	"reflect"
 	"strings"
 
@@ -77,6 +78,9 @@ func buildOperation(ws *restful.WebService, r restful.Route, cfg Config) *spec.O
 		if 200 == k { // any 2xx code?
 			o.Responses.Default = &r
 		}
+	}
+	if len(o.Responses.StatusCodeResponses) == 0 {
+		o.Responses.StatusCodeResponses[200] = spec.Response{ResponseProps: spec.ResponseProps{Description: http.StatusText(http.StatusOK)}}
 	}
 	return o
 }
