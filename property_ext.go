@@ -16,7 +16,7 @@ func setDescription(prop *spec.Schema, field reflect.StructField) {
 
 func setDefaultValue(prop *spec.Schema, field reflect.StructField) {
 	if tag := field.Tag.Get("default"); tag != "" {
-		prop.Default = tag
+		prop.Default = stringAutoType(tag)
 	}
 }
 

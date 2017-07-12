@@ -86,6 +86,21 @@ func buildOperation(ws *restful.WebService, r restful.Route, cfg Config) *spec.O
 	return o
 }
 
+// stringAutoType automatically picks the correct type from an ambiguously typed
+// string. Ex. numbers become int, true/false become bool, etc.
+func stringAutoType(ambiguous string) interface{} {
+	if ambiguous == "" {
+		return nil
+	}
+	if parsedInt, err := strconv.ParseInt(ambiguous, 10, 64); err == nil {
+		return parsedInt
+	}
+	if parsedBool, err := strconv.ParseBool(ambiguous); err == nil {
+		return parsedBool
+	}
+	return ambiguous
+}
+
 func buildParameter(r restful.Route, restfulParam *restful.Parameter, cfg Config) spec.Parameter {
 	p := spec.Parameter{}
 	param := restfulParam.Data()
@@ -94,15 +109,7 @@ func buildParameter(r restful.Route, restfulParam *restful.Parameter, cfg Config
 	p.Description = param.Description
 	p.Name = param.Name
 	p.Required = param.Required
-	if param.DefaultValue != "" {
-		if parsedInt, err := strconv.ParseInt(param.DefaultValue, 10, 64); err == nil {
-			p.Default = parsedInt
-		} else if parsedBool, err := strconv.ParseBool(param.DefaultValue); err == nil {
-			p.Default = parsedBool
-		} else {
-			p.Default = param.DefaultValue
-		}
-	}
+	p.Default = stringAutoType(param.DefaultValue)
 	p.Format = param.DataFormat
 	if p.In == "body" && r.ReadSample != nil && p.Type == reflect.TypeOf(r.ReadSample).String() {
 		p.Schema = new(spec.Schema)
