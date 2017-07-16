@@ -1,7 +1,9 @@
 package restfulspec
 
 import (
+	"net/http"
 	"reflect"
+	"strconv"
 	"strings"
 
 	restful "github.com/emicklei/go-restful"
@@ -78,7 +80,25 @@ func buildOperation(ws *restful.WebService, r restful.Route, cfg Config) *spec.O
 			o.Responses.Default = &r
 		}
 	}
+	if len(o.Responses.StatusCodeResponses) == 0 {
+		o.Responses.StatusCodeResponses[200] = spec.Response{ResponseProps: spec.ResponseProps{Description: http.StatusText(http.StatusOK)}}
+	}
 	return o
+}
+
+// stringAutoType automatically picks the correct type from an ambiguously typed
+// string. Ex. numbers become int, true/false become bool, etc.
+func stringAutoType(ambiguous string) interface{} {
+	if ambiguous == "" {
+		return nil
+	}
+	if parsedInt, err := strconv.ParseInt(ambiguous, 10, 64); err == nil {
+		return parsedInt
+	}
+	if parsedBool, err := strconv.ParseBool(ambiguous); err == nil {
+		return parsedBool
+	}
+	return ambiguous
 }
 
 func buildParameter(r restful.Route, restfulParam *restful.Parameter, cfg Config) spec.Parameter {
@@ -89,11 +109,13 @@ func buildParameter(r restful.Route, restfulParam *restful.Parameter, cfg Config
 	p.Description = param.Description
 	p.Name = param.Name
 	p.Required = param.Required
-	p.Default = param.DefaultValue
+	p.Default = stringAutoType(param.DefaultValue)
 	p.Format = param.DataFormat
+
 	if p.In == "body" && r.ReadSample != nil && p.Type == reflect.TypeOf(r.ReadSample).String() {
 		p.Schema = new(spec.Schema)
 		p.Schema.Ref = spec.MustCreateRef("#/definitions/" + p.Type)
+		p.SimpleSchema = spec.SimpleSchema{}
 	}
 	return p
 }

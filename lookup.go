@@ -13,7 +13,7 @@ func asParamType(kind int) string {
 	case kind == restful.HeaderParameterKind:
 		return "header"
 	case kind == restful.FormParameterKind:
-		return "form"
+		return "formData"
 	}
 	return ""
 }

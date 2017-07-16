@@ -33,7 +33,7 @@ func (u UserResource) WebService() *restful.WebService {
 	ws.Route(ws.GET("/{user-id}").To(u.findUser).
 		// docs
 		Doc("get a user").
-		Param(ws.PathParameter("user-id", "identifier of the user").DataType("string")).
+		Param(ws.PathParameter("user-id", "identifier of the user").DataType("integer").DefaultValue("1")).
 		Metadata(restfulspec.KeyOpenAPITags, tags).
 		Writes(User{}). // on the response
 		Returns(200, "OK", User{}).
@@ -132,7 +132,7 @@ func main() {
 	// Optionally, you can install the Swagger Service which provides a nice Web UI on your REST API
 	// You need to download the Swagger HTML5 assets and change the FilePath location in the config below.
 	// Open http://localhost:8080/apidocs/?url=http://localhost:8080/apidocs.json
-	http.Handle("/apidocs/", http.StripPrefix("/apidocs/", http.FileServer(http.Dir("/Users/emicklei/xProjects/swagger-ui/dist"))))
+	http.Handle("/apidocs/", http.StripPrefix("/apidocs/", http.FileServer(http.Dir("/home/v/Downloads/swagger-ui"))))
 
 	log.Printf("start listening on localhost:8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
@@ -163,5 +163,6 @@ func enrichSwaggerObject(swo *spec.Swagger) {
 // User is just a sample type
 type User struct {
 	ID   string `json:"id" description:"identifier of the user"`
-	Name string `json:"name" description:"name of the user"`
+	Name string `json:"name" description:"name of the user" default:"john"`
+	Age  int    `json:"age" description:"age of the user" default:"21"`
 }
