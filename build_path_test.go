@@ -7,13 +7,15 @@ import (
 )
 
 func TestRouteToPath(t *testing.T) {
+	description := "get the <strong>a</strong> <em>b</em> test\nthis is the test description"
+
 	ws := new(restful.WebService)
 	ws.Path("/tests/{v}")
 	ws.Param(ws.PathParameter("v", "value of v").DefaultValue("default-v"))
 	ws.Consumes(restful.MIME_JSON)
 	ws.Produces(restful.MIME_XML)
 	ws.Route(ws.GET("/a/{b}").To(dummy).
-		Doc("get the a b test").
+		Doc(description).
 		Param(ws.PathParameter("b", "value of b").DefaultValue("default-b")).
 		Param(ws.QueryParameter("q", "value of q").DefaultValue("default-q")).
 		Returns(200, "list of a b tests", []Sample{}).
@@ -22,8 +24,11 @@ func TestRouteToPath(t *testing.T) {
 	p := buildPaths(ws, Config{})
 	t.Log(asJSON(p))
 
-	if p.Paths["/tests/{v}/a/{b}"].Get.Description != "get the a b test" {
+	if p.Paths["/tests/{v}/a/{b}"].Get.Description != description {
 		t.Errorf("GET description incorrect")
+	}
+	if p.Paths["/tests/{v}/a/{b}"].Get.Summary != "get the a b test" {
+		t.Errorf("GET summary incorrect")
 	}
 	response := p.Paths["/tests/{v}/a/{b}"].Get.Responses.StatusCodeResponses[200]
 	if response.Schema.Type[0] != "array" {
