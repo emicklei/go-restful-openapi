@@ -137,7 +137,13 @@ func buildResponse(e restful.ResponseError, cfg Config) (r spec.Response) {
 			r.Schema.Items = &spec.SchemaOrArray{
 				Schema: &spec.Schema{},
 			}
-			r.Schema.Items.Schema.Ref = spec.MustCreateRef("#/definitions/" + modelName)
+			isPrimitive := isPrimitiveType(modelName)
+			if isPrimitive {
+				mapped := jsonSchemaType(modelName)
+				r.Schema.Items.Schema.Type = []string{mapped}
+			} else {
+				r.Schema.Items.Schema.Ref = spec.MustCreateRef("#/definitions/" + modelName)
+			}
 		} else {
 			modelName := definitionBuilder{}.keyFrom(st)
 			r.Schema.Ref = spec.MustCreateRef("#/definitions/" + modelName)
@@ -151,4 +157,38 @@ func buildResponse(e restful.ResponseError, cfg Config) (r spec.Response) {
 func stripTags(html string) string {
 	re := regexp.MustCompile("<[^>]*>")
 	return re.ReplaceAllString(html, "")
+}
+
+func isPrimitiveType(modelName string) bool {
+	if len(modelName) == 0 {
+		return false
+	}
+	return strings.Contains("uint uint8 uint16 uint32 uint64 int int8 int16 int32 int64 float32 float64 bool string byte rune time.Time", modelName)
+}
+
+func jsonSchemaType(modelName string) string {
+	schemaMap := map[string]string{
+		"uint":   "integer",
+		"uint8":  "integer",
+		"uint16": "integer",
+		"uint32": "integer",
+		"uint64": "integer",
+
+		"int":   "integer",
+		"int8":  "integer",
+		"int16": "integer",
+		"int32": "integer",
+		"int64": "integer",
+
+		"byte":      "integer",
+		"float64":   "number",
+		"float32":   "number",
+		"bool":      "boolean",
+		"time.Time": "string",
+	}
+	mapped, ok := schemaMap[modelName]
+	if !ok {
+		return modelName // use as is (custom or struct)
+	}
+	return mapped
 }
