@@ -56,6 +56,7 @@ func buildOperation(ws *restful.WebService, r restful.Route, cfg Config) *spec.O
 	}
 	o.Consumes = r.Consumes
 	o.Produces = r.Produces
+	o.Deprecated = r.Deprecated
 	if r.Metadata != nil {
 		if tags, ok := r.Metadata[KeyOpenAPITags]; ok {
 			if tagList, ok := tags.([]string); ok {
