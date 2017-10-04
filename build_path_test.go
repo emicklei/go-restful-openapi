@@ -25,6 +25,7 @@ func TestRouteToPath(t *testing.T) {
 		Doc("get the a b test").
 		Param(ws.PathParameter("b", "value of b").DefaultValue("default-b")).
 		Param(ws.PathParameter("c", "with regex").DefaultValue("abc")).
+		Param(ws.PathParameter("d", "with regex").DefaultValue("abcef")).
 		Param(ws.QueryParameter("q", "value of q").DefaultValue("default-q")).
 		Returns(200, "list of a b tests", []Sample{}).
 		Writes([]Sample{}))
@@ -51,6 +52,31 @@ func TestRouteToPath(t *testing.T) {
 	}
 	if response.Schema.Items.Schema.Ref.String() != "#/definitions/restfulspec.Sample" {
 		t.Errorf("response element type incorrect")
+	}
+
+	// Test for patterns
+	path := p.Paths["/tests/{v}/a/{b}/{c}/{d}/e"]
+	checkPattern(t, path, "c", "[a-z]+")
+	checkPattern(t, path, "d", "[1-9]+")
+	checkPattern(t, path, "v", "")
+}
+
+func getParameter(path spec.PathItem, name string) (*spec.Parameter, bool) {
+	for _, param := range path.Get.Parameters {
+		if param.Name == name {
+			return &param, true
+		}
+	}
+	return nil, false
+}
+
+func checkPattern(t *testing.T, path spec.PathItem, paramName string, pattern string) {
+	param, exists := getParameter(path, paramName)
+	if !exists {
+		t.Error("Expected Parameter %s to exist", paramName)
+	}
+	if param.Pattern != pattern {
+		t.Error("Expected pattern %s to equal %s", param.Pattern, pattern)
 	}
 }
 

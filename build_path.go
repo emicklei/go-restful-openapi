@@ -17,12 +17,12 @@ const KeyOpenAPITags = "openapi.tags"
 func buildPaths(ws *restful.WebService, cfg Config) spec.Paths {
 	p := spec.Paths{Paths: map[string]spec.PathItem{}}
 	for _, each := range ws.Routes() {
-		path := sanitizePath(each.Path)
+		path, patterns := sanitizePath(each.Path)
 		existingPathItem, ok := p.Paths[path]
 		if !ok {
 			existingPathItem = spec.PathItem{}
 		}
-		p.Paths[path] = buildPathItem(ws, each, existingPathItem, cfg)
+		p.Paths[path] = buildPathItem(ws, each, existingPathItem, patterns, cfg)
 	}
 	return p
 }
@@ -30,22 +30,29 @@ func buildPaths(ws *restful.WebService, cfg Config) spec.Paths {
 // sanitizePath removes regex expressions from named path params,
 // since openapi only supports setting the pattern as a a property named "pattern".
 // Expressions like "/api/v1/{name:[a-z]/" are converted to "/api/v1/{name}/".
-func sanitizePath(restfulPath string) string {
+// The second return value is a map which contains the mapping from the path parameter
+// name to the extracted pattern
+func sanitizePath(restfulPath string) (string, map[string]string) {
 	openapiPath := ""
+	patterns := map[string]string{}
 	for _, fragment := range strings.Split(restfulPath, "/") {
 		if fragment == "" {
 			continue
 		}
 		if strings.HasPrefix(fragment, "{") && strings.Contains(fragment, ":") {
-			fragment = strings.Split(fragment, ":")[0] + "}"
+			split := strings.Split(fragment, ":")
+			fragment = split[0][1:]
+			pattern := split[1][:len(split[1])-1]
+			patterns[fragment] = pattern
+			fragment = "{" + fragment + "}"
 		}
 		openapiPath += "/" + fragment
 	}
-	return openapiPath
+	return openapiPath, patterns
 }
 
-func buildPathItem(ws *restful.WebService, r restful.Route, existingPathItem spec.PathItem, cfg Config) spec.PathItem {
-	op := buildOperation(ws, r, cfg)
+func buildPathItem(ws *restful.WebService, r restful.Route, existingPathItem spec.PathItem, patterns map[string]string, cfg Config) spec.PathItem {
+	op := buildOperation(ws, r, patterns, cfg)
 	switch r.Method {
 	case "GET":
 		existingPathItem.Get = op
@@ -65,7 +72,7 @@ func buildPathItem(ws *restful.WebService, r restful.Route, existingPathItem spe
 	return existingPathItem
 }
 
-func buildOperation(ws *restful.WebService, r restful.Route, cfg Config) *spec.Operation {
+func buildOperation(ws *restful.WebService, r restful.Route, patterns map[string]string, cfg Config) *spec.Operation {
 	o := spec.NewOperation(r.Operation)
 	o.Description = r.Doc
 	// take the first line (stripping HTML tags) to be the summary
@@ -84,11 +91,11 @@ func buildOperation(ws *restful.WebService, r restful.Route, cfg Config) *spec.O
 	}
 	// collect any path parameters
 	for _, param := range ws.PathParameters() {
-		o.Parameters = append(o.Parameters, buildParameter(r, param, cfg))
+		o.Parameters = append(o.Parameters, buildParameter(r, param, patterns[param.Data().Name], cfg))
 	}
 	// route specific params
 	for _, each := range r.ParameterDocs {
-		o.Parameters = append(o.Parameters, buildParameter(r, each, cfg))
+		o.Parameters = append(o.Parameters, buildParameter(r, each, patterns[each.Data().Name], cfg))
 	}
 	o.Responses = new(spec.Responses)
 	props := &o.Responses.ResponsesProps
@@ -121,7 +128,7 @@ func stringAutoType(ambiguous string) interface{} {
 	return ambiguous
 }
 
-func buildParameter(r restful.Route, restfulParam *restful.Parameter, cfg Config) spec.Parameter {
+func buildParameter(r restful.Route, restfulParam *restful.Parameter, pattern string, cfg Config) spec.Parameter {
 	p := spec.Parameter{}
 	param := restfulParam.Data()
 	p.In = asParamType(param.Kind)
@@ -129,7 +136,9 @@ func buildParameter(r restful.Route, restfulParam *restful.Parameter, cfg Config
 	p.Name = param.Name
 	p.Required = param.Required
 
-	// TODO add regex pattern to p.Pattern
+	if param.Kind == restful.PathParameterKind {
+		p.Pattern = pattern
+	}
 
 	if param.Kind == restful.BodyParameterKind && r.ReadSample != nil && param.DataType == reflect.TypeOf(r.ReadSample).String() {
 		p.Schema = new(spec.Schema)
@@ -140,6 +149,7 @@ func buildParameter(r restful.Route, restfulParam *restful.Parameter, cfg Config
 		p.Default = stringAutoType(param.DefaultValue)
 		p.Format = param.DataFormat
 	}
+
 	return p
 }
 
