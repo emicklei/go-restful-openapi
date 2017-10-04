@@ -24,6 +24,11 @@ func TestRouteToPath(t *testing.T) {
 	p := buildPaths(ws, Config{})
 	t.Log(asJSON(p))
 
+	if p.Paths["/tests/{v}/a/{b}"].Get.Parameters[0].Type != "string" {
+		t.Error("Parameter type is not set.")
+
+	}
+
 	if p.Paths["/tests/{v}/a/{b}"].Get.Description != description {
 		t.Errorf("GET description incorrect")
 	}
