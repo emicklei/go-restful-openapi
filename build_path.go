@@ -17,13 +17,31 @@ const KeyOpenAPITags = "openapi.tags"
 func buildPaths(ws *restful.WebService, cfg Config) spec.Paths {
 	p := spec.Paths{Paths: map[string]spec.PathItem{}}
 	for _, each := range ws.Routes() {
-		existingPathItem, ok := p.Paths[each.Path]
+		path := sanitizePath(each.Path)
+		existingPathItem, ok := p.Paths[path]
 		if !ok {
 			existingPathItem = spec.PathItem{}
 		}
-		p.Paths[each.Path] = buildPathItem(ws, each, existingPathItem, cfg)
+		p.Paths[path] = buildPathItem(ws, each, existingPathItem, cfg)
 	}
 	return p
+}
+
+// sanitizePath removes regex expressions from named path params,
+// since openapi only supports setting the pattern as a a property named "pattern".
+// Expressions like "/api/v1/{name:[a-z]/" are converted to "/api/v1/{name}/".
+func sanitizePath(restfulPath string) string {
+	openapiPath := ""
+	for _, fragment := range strings.Split(restfulPath, "/") {
+		if fragment == "" {
+			continue
+		}
+		if strings.HasPrefix(fragment, "{") && strings.Contains(fragment, ":") {
+			fragment = strings.Split(fragment, ":")[0] + "}"
+		}
+		openapiPath += "/" + fragment
+	}
+	return openapiPath
 }
 
 func buildPathItem(ws *restful.WebService, r restful.Route, existingPathItem spec.PathItem, cfg Config) spec.PathItem {
@@ -110,6 +128,8 @@ func buildParameter(r restful.Route, restfulParam *restful.Parameter, cfg Config
 	p.Description = param.Description
 	p.Name = param.Name
 	p.Required = param.Required
+
+	// TODO add regex pattern to p.Pattern
 
 	if param.Kind == restful.BodyParameterKind && r.ReadSample != nil && param.DataType == reflect.TypeOf(r.ReadSample).String() {
 		p.Schema = new(spec.Schema)

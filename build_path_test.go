@@ -21,13 +21,22 @@ func TestRouteToPath(t *testing.T) {
 		Param(ws.QueryParameter("q", "value of q").DefaultValue("default-q")).
 		Returns(200, "list of a b tests", []Sample{}).
 		Writes([]Sample{}))
+	ws.Route(ws.GET("/a/{b}/{c:[a-z]+}/{d:[1-9]+}/e").To(dummy).
+		Doc("get the a b test").
+		Param(ws.PathParameter("b", "value of b").DefaultValue("default-b")).
+		Param(ws.PathParameter("c", "with regex").DefaultValue("abc")).
+		Param(ws.QueryParameter("q", "value of q").DefaultValue("default-q")).
+		Returns(200, "list of a b tests", []Sample{}).
+		Writes([]Sample{}))
 
 	p := buildPaths(ws, Config{})
 	t.Log(asJSON(p))
 
 	if p.Paths["/tests/{v}/a/{b}"].Get.Parameters[0].Type != "string" {
 		t.Error("Parameter type is not set.")
-
+	}
+	if _, exists := p.Paths["/tests/{v}/a/{b}/{c}/{d}/e"]; !exists {
+		t.Error("Expected path to exist after it was sanitized.")
 	}
 
 	if p.Paths["/tests/{v}/a/{b}"].Get.Description != description {
