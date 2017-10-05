@@ -62,7 +62,6 @@ func (b definitionBuilder) addModel(st reflect.Type, nameOverride string) *spec.
 	}
 	sm := spec.Schema{
 		SchemaProps: spec.SchemaProps{
-			ID:         modelName,
 			Required:   []string{},
 			Properties: map[string]spec.Schema{},
 		},
@@ -112,6 +111,10 @@ func (b definitionBuilder) addModel(st reflect.Type, nameOverride string) *spec.
 	} else if len(modelDescriptions) != 0 {
 		sm.Description = strings.Join(modelDescriptions, "\n")
 	}
+	// Needed to pass openapi validation. This field exists for json-schema compatibility,
+	// but it conflicts with the openapi specification.
+	// See https://github.com/go-openapi/spec/issues/23 for more context
+	sm.ID = ""
 
 	// update model builder with completed model
 	b.Definitions[modelName] = sm
