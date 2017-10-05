@@ -1,13 +1,13 @@
 package main
 
 import (
-	"testing"
-	"io/ioutil"
-	"github.com/emicklei/go-restful-openapi"
-	"github.com/emicklei/go-restful"
-	spec2 "github.com/go-openapi/spec"
 	"encoding/json"
+	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful-openapi"
+	spec2 "github.com/go-openapi/spec"
+	"io/ioutil"
 	"reflect"
+	"testing"
 )
 
 func TestAppleDef(t *testing.T) {
@@ -17,10 +17,7 @@ func TestAppleDef(t *testing.T) {
 		t.Error("Loading the openapi specification failed.")
 	}
 	ws := UserResource{}.WebService()
-	expected := &spec2.Swagger{}
-	if err := json.Unmarshal(raw, expected); err != nil {
-		t.Error("Unmarshaling the openapi specification failed.")
-	}
+	expected := asStruct(string(raw))
 
 	config := restfulspec.Config{
 		WebServices:    []*restful.WebService{ws}, // you control what services are visible
@@ -30,7 +27,7 @@ func TestAppleDef(t *testing.T) {
 
 	actual := restfulspec.BuildSwagger(config)
 
-	if reflect.DeepEqual(expected, actual) != true {
+	if reflect.DeepEqual(expected, asStruct(asJSON(actual))) != true {
 		t.Errorf("Got:\n%v\nWanted:\n%v", asJSON(actual), asJSON(expected))
 	}
 }
@@ -40,3 +37,8 @@ func asJSON(v interface{}) string {
 	return string(data)
 }
 
+func asStruct(raw string) *spec2.Swagger {
+	expected := &spec2.Swagger{}
+	json.Unmarshal([]byte(raw), expected)
+	return expected
+}

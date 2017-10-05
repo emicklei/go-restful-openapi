@@ -72,8 +72,7 @@ func (b definitionBuilder) addModel(st reflect.Type, nameOverride string) *spec.
 
 	// check for slice or array
 	if st.Kind() == reflect.Slice || st.Kind() == reflect.Array {
-		b.addModel(st.Elem(), "")
-		return &sm
+		st = st.Elem()
 	}
 	// check for structure or primitive type
 	if st.Kind() != reflect.Struct {
@@ -374,6 +373,8 @@ func (b definitionBuilder) keyFrom(st reflect.Type) string {
 		}
 	}
 	if len(st.Name()) == 0 { // unnamed type
+		// If it is an array, remove the leading []
+		key = strings.TrimPrefix(key, "[]")
 		// Swagger UI has special meaning for [
 		key = strings.Replace(key, "[]", "||", -1)
 	}
