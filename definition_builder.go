@@ -62,7 +62,6 @@ func (b definitionBuilder) addModel(st reflect.Type, nameOverride string) *spec.
 	}
 	sm := spec.Schema{
 		SchemaProps: spec.SchemaProps{
-			ID:         modelName,
 			Required:   []string{},
 			Properties: map[string]spec.Schema{},
 		},
@@ -73,8 +72,7 @@ func (b definitionBuilder) addModel(st reflect.Type, nameOverride string) *spec.
 
 	// check for slice or array
 	if st.Kind() == reflect.Slice || st.Kind() == reflect.Array {
-		b.addModel(st.Elem(), "")
-		return &sm
+		st = st.Elem()
 	}
 	// check for structure or primitive type
 	if st.Kind() != reflect.Struct {
@@ -112,6 +110,10 @@ func (b definitionBuilder) addModel(st reflect.Type, nameOverride string) *spec.
 	} else if len(modelDescriptions) != 0 {
 		sm.Description = strings.Join(modelDescriptions, "\n")
 	}
+	// Needed to pass openapi validation. This field exists for json-schema compatibility,
+	// but it conflicts with the openapi specification.
+	// See https://github.com/go-openapi/spec/issues/23 for more context
+	sm.ID = ""
 
 	// update model builder with completed model
 	b.Definitions[modelName] = sm
@@ -371,6 +373,8 @@ func (b definitionBuilder) keyFrom(st reflect.Type) string {
 		}
 	}
 	if len(st.Name()) == 0 { // unnamed type
+		// If it is an array, remove the leading []
+		key = strings.TrimPrefix(key, "[]")
 		// Swagger UI has special meaning for [
 		key = strings.Replace(key, "[]", "||", -1)
 	}

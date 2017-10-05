@@ -1,7 +1,9 @@
 package restfulspec
 
 import "testing"
-import "github.com/go-openapi/spec"
+import (
+	"github.com/go-openapi/spec"
+)
 
 type Apple struct {
 	Species string
@@ -20,6 +22,9 @@ func TestAppleDef(t *testing.T) {
 		t.Errorf("got %v want %v", got, want)
 	}
 	if got, want := schema.Required[1], "vol"; got != want {
+		t.Errorf("got %v want %v", got, want)
+	}
+	if got, want := schema.ID, ""; got != want {
 		t.Errorf("got %v want %v", got, want)
 	}
 }
