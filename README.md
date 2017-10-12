@@ -5,7 +5,17 @@
 
 [openapi](https://www.openapis.org) extension to the go-restful package, targeting [version 2.0](https://github.com/OAI/OpenAPI-Specification)
 
-## work in progress
+## The following Go field tags are translated to OpenAPI equivalents
+- description
+- minimum
+- maximum
+- optional ( if set to "true" then it is not listed in `required`)
+- unique
+- modelDescription
+- type (overrides the Go type String())
+- enum
+
+See TestThatExtraTagsAreReadIntoModel for examples.
 
 ## dependencies
 

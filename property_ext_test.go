@@ -1,7 +1,9 @@
 package restfulspec
 
 import (
+	"fmt"
 	"net"
+	"strings"
 	"testing"
 )
 
@@ -17,6 +19,7 @@ func TestThatExtraTagsAreReadIntoModel(t *testing.T) {
 		FakeArray fakearray `type:"[]string"`
 		IP        net.IP    `type:"string"`
 		Password  string
+		Optional  bool `optional:"true"`
 	}
 	d := definitionsFromStruct(Anything{})
 	props, _ := d["restfulspec.Anything"]
@@ -62,7 +65,9 @@ func TestThatExtraTagsAreReadIntoModel(t *testing.T) {
 	if got, want := p8.Type[0], "string"; got != want {
 		t.Errorf("got %v want %v", got, want)
 	}
-
+	if got, want := strings.Contains(fmt.Sprintf("%v", props.Required), "Optional"), false; got != want {
+		t.Errorf("got %v want %v", got, want)
+	}
 	if got, want := props.Description, "a test\nmore description"; got != want {
 		t.Errorf("got %v want %v", got, want)
 	}

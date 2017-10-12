@@ -123,6 +123,9 @@ func (b definitionBuilder) addModel(st reflect.Type, nameOverride string) *spec.
 
 func (b definitionBuilder) isPropertyRequired(field reflect.StructField) bool {
 	required := true
+	if optionalTag := field.Tag.Get("optional"); optionalTag == "true" {
+		return false
+	}
 	if jsonTag := field.Tag.Get("json"); jsonTag != "" {
 		s := strings.Split(jsonTag, ",")
 		if len(s) > 1 && s[1] == "omitempty" {
