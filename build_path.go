@@ -188,6 +188,8 @@ func buildResponse(e restful.ResponseError, cfg Config) (r spec.Response) {
 			} else {
 				r.Schema.Items.Schema.Ref = spec.MustCreateRef("#/definitions/" + modelName)
 			}
+		} else if st.Kind() == reflect.String {
+			r.Schema.Type = []string{st.Kind().String()}
 		} else {
 			modelName := definitionBuilder{}.keyFrom(st)
 			r.Schema.Ref = spec.MustCreateRef("#/definitions/" + modelName)
