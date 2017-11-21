@@ -56,6 +56,11 @@ func (b definitionBuilder) addModel(st reflect.Type, nameOverride string) *spec.
 		st.Elem().Kind() == reflect.Uint8 {
 		return nil
 	}
+	
+	if st.Kind() == reflect.Map {
+		return b.addModel(st.Elem(), "")
+	}
+	
 	// see if we already have visited this model
 	if _, ok := b.Definitions[modelName]; ok {
 		return nil
