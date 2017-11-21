@@ -165,35 +165,48 @@ func buildParameter(r restful.Route, restfulParam *restful.Parameter, pattern st
 	return p
 }
 
+func buildSchema(st reflect.Type) *spec.Schema {
+	if st.Kind() == reflect.Ptr {
+		// For pointer type, use element type as the key; otherwise we'll
+		// endup with '#/definitions/*Type' which violates openapi spec.
+		return buildSchema(st.Elem())
+	}
+
+	schema := new(spec.Schema)
+	if isPrimitiveType(st.Kind().String()) {
+		mapped := jsonSchemaType(st.String())
+		schema.Type = []string{mapped}
+	} else if st.Kind() == reflect.Array || st.Kind() == reflect.Slice {
+		schema.Type = []string{"array"}
+		schema.Items = &spec.SchemaOrArray{
+			Schema: &spec.Schema{},
+		}
+
+		schema.Items.Schema = buildSchema(st.Elem())
+	} else if st.Kind() == reflect.Map {
+		if st.Elem().Kind() == reflect.Interface {
+			schema.Type = []string{"object"}
+		} else {
+			schema.Type = []string{st.Key().Kind().String()}
+			additionalProperties := &spec.SchemaOrBool{
+				Schema: &spec.Schema{},
+			}
+			schema.AdditionalProperties = additionalProperties
+
+			schema.AdditionalProperties.Schema = buildSchema(st.Elem())
+		}
+	} else {
+		modelName := definitionBuilder{}.keyFrom(st)
+		schema.Ref = spec.MustCreateRef("#/definitions/" + modelName)
+	}
+
+	return schema
+}
+
 func buildResponse(e restful.ResponseError, cfg Config) (r spec.Response) {
 	r.Description = e.Message
 	if e.Model != nil {
-		st := reflect.TypeOf(e.Model)
-		if st.Kind() == reflect.Ptr {
-			// For pointer type, use element type as the key; otherwise we'll
-			// endup with '#/definitions/*Type' which violates openapi spec.
-			st = st.Elem()
-		}
-		r.Schema = new(spec.Schema)
-		if st.Kind() == reflect.Array || st.Kind() == reflect.Slice {
-			modelName := definitionBuilder{}.keyFrom(st.Elem())
-			r.Schema.Type = []string{"array"}
-			r.Schema.Items = &spec.SchemaOrArray{
-				Schema: &spec.Schema{},
-			}
-			isPrimitive := isPrimitiveType(modelName)
-			if isPrimitive {
-				mapped := jsonSchemaType(modelName)
-				r.Schema.Items.Schema.Type = []string{mapped}
-			} else {
-				r.Schema.Items.Schema.Ref = spec.MustCreateRef("#/definitions/" + modelName)
-			}
-		} else if st.Kind() == reflect.String {
-			r.Schema.Type = []string{st.Kind().String()}
-		} else {
-			modelName := definitionBuilder{}.keyFrom(st)
-			r.Schema.Ref = spec.MustCreateRef("#/definitions/" + modelName)
-		}
+		r.Schema = buildSchema(reflect.TypeOf(e.Model))
 	}
 	return r
 }

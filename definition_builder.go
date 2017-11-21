@@ -52,15 +52,18 @@ func (b definitionBuilder) addModel(st reflect.Type, nameOverride string) *spec.
 	// JSON arrays, except that []byte encodes as a base64-encoded string.
 	// If we see a []byte here, treat it at as a primitive type (string)
 	// and deal with it in buildArrayTypeProperty.
-	if (st.Kind() == reflect.Slice || st.Kind() == reflect.Array) &&
-		st.Elem().Kind() == reflect.Uint8 {
-		return nil
+	if (st.Kind() == reflect.Slice || st.Kind() == reflect.Array) {
+		if st.Elem().Kind() == reflect.Uint8 {
+			return nil
+		} else {
+			return b.addModel(st.Elem(), "")
+		}
 	}
-	
+
 	if st.Kind() == reflect.Map {
 		return b.addModel(st.Elem(), "")
 	}
-	
+
 	// see if we already have visited this model
 	if _, ok := b.Definitions[modelName]; ok {
 		return nil
@@ -200,7 +203,7 @@ func (b definitionBuilder) buildProperty(field reflect.StructField, model *spec.
 		stringt := "string"
 		prop.Type = []string{stringt}
 		return jsonName, modelDescription, prop
-	case fieldKind == reflect.Map:
+	case fieldKind == reflect.Map, fieldKind == reflect.Interface:
 		// if it's a map, it's unstructured, and swagger can't handle it
 		objectType := "object"
 		prop.Type = []string{objectType}
