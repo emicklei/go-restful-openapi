@@ -24,7 +24,6 @@ func TestRouteToPath(t *testing.T) {
 		Returns(200, "list of a b tests", []Sample{}).
 		Writes([]Sample{}))
 	ws.Route(ws.GET("/a/{b}/{c:[a-z]+}/{d:[1-9]+}/e").To(dummy).
-		Doc("get the a b test").
 		Param(ws.PathParameter("b", "value of b").DefaultValue("default-b")).
 		Param(ws.PathParameter("c", "with regex").DefaultValue("abc")).
 		Param(ws.PathParameter("d", "with regex").DefaultValue("abcef")).
@@ -45,7 +44,7 @@ func TestRouteToPath(t *testing.T) {
 	if p.Paths["/tests/{v}/a/{b}"].Get.Description != notes {
 		t.Errorf("GET description incorrect")
 	}
-	if p.Paths["/tests/{v}/a/{b}"].Get.Summary != "get the a b test" {
+	if p.Paths["/tests/{v}/a/{b}"].Get.Summary != "get the a b test\nthis is the test description" {
 		t.Errorf("GET summary incorrect")
 	}
 	response := p.Paths["/tests/{v}/a/{b}"].Get.Responses.StatusCodeResponses[200]
