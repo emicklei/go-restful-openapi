@@ -9,6 +9,7 @@ import (
 
 func TestRouteToPath(t *testing.T) {
 	description := "get the <strong>a</strong> <em>b</em> test\nthis is the test description"
+	notes := "notes\nblah blah"
 
 	ws := new(restful.WebService)
 	ws.Path("/tests/{v}")
@@ -17,12 +18,12 @@ func TestRouteToPath(t *testing.T) {
 	ws.Produces(restful.MIME_XML)
 	ws.Route(ws.GET("/a/{b}").To(dummy).
 		Doc(description).
+		Notes(notes).
 		Param(ws.PathParameter("b", "value of b").DefaultValue("default-b")).
 		Param(ws.QueryParameter("q", "value of q").DefaultValue("default-q")).
 		Returns(200, "list of a b tests", []Sample{}).
 		Writes([]Sample{}))
 	ws.Route(ws.GET("/a/{b}/{c:[a-z]+}/{d:[1-9]+}/e").To(dummy).
-		Doc("get the a b test").
 		Param(ws.PathParameter("b", "value of b").DefaultValue("default-b")).
 		Param(ws.PathParameter("c", "with regex").DefaultValue("abc")).
 		Param(ws.PathParameter("d", "with regex").DefaultValue("abcef")).
@@ -40,10 +41,10 @@ func TestRouteToPath(t *testing.T) {
 		t.Error("Expected path to exist after it was sanitized.")
 	}
 
-	if p.Paths["/tests/{v}/a/{b}"].Get.Description != description {
+	if p.Paths["/tests/{v}/a/{b}"].Get.Description != notes {
 		t.Errorf("GET description incorrect")
 	}
-	if p.Paths["/tests/{v}/a/{b}"].Get.Summary != "get the a b test" {
+	if p.Paths["/tests/{v}/a/{b}"].Get.Summary != "get the a b test\nthis is the test description" {
 		t.Errorf("GET summary incorrect")
 	}
 	response := p.Paths["/tests/{v}/a/{b}"].Get.Responses.StatusCodeResponses[200]
@@ -99,11 +100,11 @@ func TestMultipleMethodsRouteToPath(t *testing.T) {
 	p := buildPaths(ws, Config{})
 	t.Log(asJSON(p))
 
-	if p.Paths["/tests/a/a/b"].Get.Description != "get a b test" {
-		t.Errorf("GET description incorrect")
+	if p.Paths["/tests/a/a/b"].Get.Summary != "get a b test" {
+		t.Errorf("GET summary incorrect")
 	}
-	if p.Paths["/tests/a/a/b"].Post.Description != "post a b test" {
-		t.Errorf("POST description incorrect")
+	if p.Paths["/tests/a/a/b"].Post.Summary != "post a b test" {
+		t.Errorf("POST summary incorrect")
 	}
 	if _, exists := p.Paths["/tests/a/a/b"].Post.Responses.StatusCodeResponses[500]; !exists {
 		t.Errorf("Response code 500 not added to spec.")
