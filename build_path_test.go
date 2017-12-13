@@ -121,3 +121,44 @@ func TestMultipleMethodsRouteToPath(t *testing.T) {
 		t.Errorf("Invalid parameter property is set on body property")
 	}
 }
+
+func TestReadArrayObjectInBody(t *testing.T) {
+	ws := new(restful.WebService)
+	ws.Path("/tests/a")
+	ws.Consumes(restful.MIME_JSON)
+	ws.Produces(restful.MIME_XML)
+
+	ws.Route(ws.POST("/a/b").To(dummy).
+		Doc("post a b test with array in body").
+		Returns(200, "list of a b tests", []Sample{}).
+		Returns(500, "internal server error", []Sample{}).
+		Reads([]Sample{}).
+		Writes([]Sample{}))
+
+	p := buildPaths(ws, Config{})
+	t.Log(asJSON(p))
+
+	postInfo := p.Paths["/tests/a/a/b"].Post
+
+	if postInfo.Description != "post a b test with array in body" {
+		t.Errorf("POST description incorrect")
+	}
+	if _, exists := postInfo.Responses.StatusCodeResponses[500]; !exists {
+		t.Errorf("Response code 500 not added to spec.")
+	}
+	// indentify  element model type in body array
+	expectedItemRef := spec.MustCreateRef("#/definitions/restfulspec.Sample")
+	postBody := postInfo.Parameters[0]
+	if postBody.Schema.Ref.String() != "" {
+		t.Errorf("you shouldn't have body Ref setting when using array in body!")
+	}
+	// check body array dy item ref
+	postBodyitems := postBody.Schema.Items.Schema.Ref
+	if postBodyitems.String() != expectedItemRef.String() {
+		t.Errorf("Expected: %s, Got: %s", expectedItemRef.String(), expectedItemRef.String())
+	}
+
+	if postBody.Format != "" || postBody.Type != "" || postBody.Default != nil {
+		t.Errorf("Invalid parameter property is set on body property")
+	}
+}

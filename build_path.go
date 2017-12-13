@@ -144,11 +144,27 @@ func buildParameter(r restful.Route, restfulParam *restful.Parameter, pattern st
 	if param.Kind == restful.PathParameterKind {
 		p.Pattern = pattern
 	}
-
-	if param.Kind == restful.BodyParameterKind && r.ReadSample != nil && param.DataType == reflect.TypeOf(r.ReadSample).String() {
+	st := reflect.TypeOf(r.ReadSample)
+	if param.Kind == restful.BodyParameterKind && r.ReadSample != nil && param.DataType == st.String() {
 		p.Schema = new(spec.Schema)
-		p.Schema.Ref = spec.MustCreateRef("#/definitions/" + param.DataType)
 		p.SimpleSchema = spec.SimpleSchema{}
+		if st.Kind() == reflect.Array || st.Kind() == reflect.Slice {
+			dataTypeName := definitionBuilder{}.keyFrom(st.Elem())
+			p.Schema.Type = []string{"array"}
+			p.Schema.Items = &spec.SchemaOrArray{
+				Schema: &spec.Schema{},
+			}
+			isPrimitive := isPrimitiveType(dataTypeName)
+			if isPrimitive {
+				mapped := jsonSchemaType(dataTypeName)
+				p.Schema.Items.Schema.Type = []string{mapped}
+			} else {
+				p.Schema.Items.Schema.Ref = spec.MustCreateRef("#/definitions/" + dataTypeName)
+			}
+		} else {
+			p.Schema.Ref = spec.MustCreateRef("#/definitions/" + param.DataType)
+		}
+
 	} else {
 		p.Type = param.DataType
 		p.Default = stringAutoType(param.DefaultValue)
