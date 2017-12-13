@@ -140,7 +140,7 @@ func TestReadArrayObjectInBody(t *testing.T) {
 
 	postInfo := p.Paths["/tests/a/a/b"].Post
 
-	if postInfo.Description != "post a b test with array in body" {
+	if postInfo.Summary != "post a b test with array in body" {
 		t.Errorf("POST description incorrect")
 	}
 	if _, exists := postInfo.Responses.StatusCodeResponses[500]; !exists {
