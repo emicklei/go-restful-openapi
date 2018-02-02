@@ -74,10 +74,10 @@ func getParameter(path spec.PathItem, name string) (*spec.Parameter, bool) {
 func checkPattern(t *testing.T, path spec.PathItem, paramName string, pattern string) {
 	param, exists := getParameter(path, paramName)
 	if !exists {
-		t.Error("Expected Parameter %s to exist", paramName)
+		t.Errorf("Expected Parameter %s to exist", paramName)
 	}
 	if param.Pattern != pattern {
-		t.Error("Expected pattern %s to equal %s", param.Pattern, pattern)
+		t.Errorf("Expected pattern %s to equal %s", param.Pattern, pattern)
 	}
 }
 
