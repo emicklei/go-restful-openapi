@@ -162,3 +162,64 @@ func TestReadArrayObjectInBody(t *testing.T) {
 		t.Errorf("Invalid parameter property is set on body property")
 	}
 }
+
+// TestWritesPrimitive ensures that if an operation returns a primitive, then it
+// is used as such (and not a ref to a definition).
+func TestWritesPrimitive(t *testing.T) {
+	ws := new(restful.WebService)
+	ws.Path("/tests/returns")
+	ws.Consumes(restful.MIME_JSON)
+	ws.Produces(restful.MIME_JSON)
+
+	ws.Route(ws.POST("/primitive").To(dummy).
+		Doc("post that returns a string").
+		Returns(200, "primitive string", "(this is a string)").
+		Writes("(this is a string)"))
+
+	ws.Route(ws.POST("/custom").To(dummy).
+		Doc("post that returns a custom structure").
+		Returns(200, "sample object", Sample{}).
+		Writes(Sample{}))
+
+	p := buildPaths(ws, Config{})
+	t.Log(asJSON(p))
+
+	// Make sure that the operation that returns a primitive type is correct.
+	if pathInfo, okay := p.Paths["/tests/returns/primitive"]; !okay {
+		t.Errorf("Could not find path")
+	} else {
+		postInfo := pathInfo.Post
+
+		if postInfo.Summary != "post that returns a string" {
+			t.Errorf("POST description incorrect")
+		}
+		response := postInfo.Responses.StatusCodeResponses[200]
+		if response.Schema.Ref.String() != "" {
+			t.Errorf("Expected no ref; got: %s", response.Schema.Ref.String())
+		}
+		if len(response.Schema.Type) != 1 {
+			t.Errorf("Expected exactly one type; got: %d", len(response.Schema.Type))
+		}
+		if response.Schema.Type[0] != "string" {
+			t.Errorf("Expected a type of string; got: %s", response.Schema.Type[0])
+		}
+	}
+
+	// Make sure that the operation that returns a custom type is correct.
+	if pathInfo, okay := p.Paths["/tests/returns/custom"]; !okay {
+		t.Errorf("Could not find path")
+	} else {
+		postInfo := pathInfo.Post
+
+		if postInfo.Summary != "post that returns a custom structure" {
+			t.Errorf("POST description incorrect")
+		}
+		response := postInfo.Responses.StatusCodeResponses[200]
+		if response.Schema.Ref.String() != "#/definitions/restfulspec.Sample" {
+			t.Errorf("Expected ref '#/definitions/restfulspec.Sample'; got: %s", response.Schema.Ref.String())
+		}
+		if len(response.Schema.Type) != 0 {
+			t.Errorf("Expected exactly zero types; got: %d", len(response.Schema.Type))
+		}
+	}
+}
