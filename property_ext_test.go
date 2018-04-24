@@ -11,7 +11,7 @@ func TestThatExtraTagsAreReadIntoModel(t *testing.T) {
 	type fakeint int
 	type fakearray string
 	type Anything struct {
-		Name      string    `description:"name" modelDescription:"a test"`
+		Name      string    `description:"name" modelDescription:"a test" readOnly:"false"`
 		Size      int       `minimum:"0" maximum:"10"`
 		Stati     string    `enum:"off|on" default:"on" modelDescription:"more description"`
 		ID        string    `unique:"true"`
@@ -19,7 +19,8 @@ func TestThatExtraTagsAreReadIntoModel(t *testing.T) {
 		FakeArray fakearray `type:"[]string"`
 		IP        net.IP    `type:"string"`
 		Password  string
-		Optional  bool `optional:"true"`
+		Optional  bool   `optional:"true"`
+		Created   string `readOnly:"true"`
 	}
 	d := definitionsFromStruct(Anything{})
 	props, _ := d["restfulspec.Anything"]
@@ -27,8 +28,14 @@ func TestThatExtraTagsAreReadIntoModel(t *testing.T) {
 	if got, want := p1.Description, "name"; got != want {
 		t.Errorf("got %v want %v", got, want)
 	}
+	if got, want := p1.ReadOnly, false; got != want {
+		t.Errorf("got %v want %v", got, want)
+	}
 	p2, _ := props.Properties["Size"]
 	if got, want := *p2.Minimum, 0.0; got != want {
+		t.Errorf("got %v want %v", got, want)
+	}
+	if got, want := p2.ReadOnly, false; got != want {
 		t.Errorf("got %v want %v", got, want)
 	}
 	if got, want := *p2.Maximum, 10.0; got != want {
@@ -63,6 +70,10 @@ func TestThatExtraTagsAreReadIntoModel(t *testing.T) {
 	}
 	p8, _ := props.Properties["IP"]
 	if got, want := p8.Type[0], "string"; got != want {
+		t.Errorf("got %v want %v", got, want)
+	}
+	p9, _ := props.Properties["Created"]
+	if got, want := p9.ReadOnly, true; got != want {
 		t.Errorf("got %v want %v", got, want)
 	}
 	if got, want := strings.Contains(fmt.Sprintf("%v", props.Required), "Optional"), false; got != want {
