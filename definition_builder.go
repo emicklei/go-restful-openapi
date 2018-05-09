@@ -330,7 +330,7 @@ func (b definitionBuilder) buildPointerTypeProperty(field reflect.StructField, j
 		}
 		if isPrimitive {
 			primName := b.jsonSchemaType(elemName)
-			prop.Items.Schema.Ref = spec.MustCreateRef("#/definitions/" + primName)
+			prop.Items.Schema.Type = []string{primName}
 		} else {
 			prop.Items.Schema.Ref = spec.MustCreateRef("#/definitions/" + elemName)
 		}
