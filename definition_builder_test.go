@@ -9,6 +9,7 @@ import (
 type Apple struct {
 	Species string
 	Volume  int `json:"vol"`
+	Things  *[]string
 }
 
 func TestAppleDef(t *testing.T) {
@@ -20,7 +21,7 @@ func TestAppleDef(t *testing.T) {
 	}
 
 	schema := db.Definitions["restfulspec.Apple"]
-	if got, want := len(schema.Required), 2; got != want {
+	if got, want := len(schema.Required), 3; got != want {
 		t.Errorf("got %v want %v", got, want)
 	}
 	if got, want := schema.Required[0], "Species"; got != want {
@@ -30,6 +31,12 @@ func TestAppleDef(t *testing.T) {
 		t.Errorf("got %v want %v", got, want)
 	}
 	if got, want := schema.ID, ""; got != want {
+		t.Errorf("got %v want %v", got, want)
+	}
+	if got, want := schema.Properties["Things"].Items.Schema.Type.Contains("string"), true; got != want {
+		t.Errorf("got %v want %v", got, want)
+	}
+	if got, want := schema.Properties["Things"].Items.Schema.Ref.String(), ""; got != want {
 		t.Errorf("got %v want %v", got, want)
 	}
 }
