@@ -3,7 +3,7 @@ package main
 import (
 	"strings"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	restful "github.com/emicklei/go-restful"
 	"github.com/go-openapi/spec"
 )
