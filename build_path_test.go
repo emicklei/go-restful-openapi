@@ -27,7 +27,8 @@ func TestRouteToPath(t *testing.T) {
 		Param(ws.PathParameter("b", "value of b").DefaultValue("default-b")).
 		Param(ws.PathParameter("c", "with regex").DefaultValue("abc")).
 		Param(ws.PathParameter("d", "with regex").DefaultValue("abcef")).
-		Param(ws.QueryParameter("q", "value of q").DefaultValue("default-q")).
+		Param(ws.QueryParameter("q", "value of q").DataType("string").DataFormat("date").
+			DefaultValue("default-q").AllowMultiple(true)).
 		Returns(200, "list of a b tests", []Sample{}).
 		Writes([]Sample{}))
 
@@ -39,6 +40,14 @@ func TestRouteToPath(t *testing.T) {
 	}
 	if _, exists := p.Paths["/tests/{v}/a/{b}/{c}/{d}/e"]; !exists {
 		t.Error("Expected path to exist after it was sanitized.")
+	}
+
+	q, exists := getParameter(p.Paths["/tests/{v}/a/{b}/{c}/{d}/e"], "q")
+	if !exists {
+		t.Errorf("get parameter q failed")
+	}
+	if q.Type != "array" || q.Items.Type != "string" || q.Format != "date" {
+		t.Errorf("parameter q expected to be a date array")
 	}
 
 	if p.Paths["/tests/{v}/a/{b}"].Get.Description != notes {

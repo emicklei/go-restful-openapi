@@ -129,14 +129,6 @@ func buildParameter(r restful.Route, restfulParam *restful.Parameter, pattern st
 	p := spec.Parameter{}
 	param := restfulParam.Data()
 	p.In = asParamType(param.Kind)
-	if param.AllowMultiple {
-		p.Type = "array"
-		p.Items = spec.NewItems()
-		p.Items.Type = param.DataType
-		p.CollectionFormat = param.CollectionFormat
-	} else {
-		p.Type = param.DataType
-	}
 	p.Description = param.Description
 	p.Name = param.Name
 	p.Required = param.Required
@@ -166,7 +158,14 @@ func buildParameter(r restful.Route, restfulParam *restful.Parameter, pattern st
 		}
 
 	} else {
-		p.Type = param.DataType
+		if param.AllowMultiple {
+			p.Type = "array"
+			p.Items = spec.NewItems()
+			p.Items.Type = param.DataType
+			p.CollectionFormat = param.CollectionFormat
+		} else {
+			p.Type = param.DataType
+		}
 		p.Default = stringAutoType(param.DefaultValue)
 		p.Format = param.DataFormat
 	}
