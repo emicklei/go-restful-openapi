@@ -1,9 +1,9 @@
 package main
 
 import (
+	"log"
 	"strings"
 
-	"github.com/Sirupsen/logrus"
 	restful "github.com/emicklei/go-restful"
 	"github.com/go-openapi/spec"
 )
@@ -59,19 +59,19 @@ func enrichSwaggeerObjectSecurity(swo *spec.Swagger) {
 				sEntry = v
 			default:
 				// not valid type
-				logrus.Warningf("skipping Security openapi spec for %s:%s, invalid metadata type %v", route.Method, route.Path, v)
+				log.Printf("skipping Security openapi spec for %s:%s, invalid metadata type %v", route.Method, route.Path, v)
 				continue
 			}
 
 			if _, ok := swo.SecurityDefinitions[sEntry.Name]; !ok {
-				logrus.Warningf("skipping Security openapi spec for %s:%s, '%s' not found in SecurityDefinitions", route.Method, route.Path, sEntry.Name)
+				log.Printf("skipping Security openapi spec for %s:%s, '%s' not found in SecurityDefinitions", route.Method, route.Path, sEntry.Name)
 				continue
 			}
 
 			// grab path and path item in openapi spec
 			path, err := swo.Paths.JSONLookup(route.Path)
 			if err != nil {
-				logrus.Warning("skipping Security openapi spec for %s:%s, %s", route.Method, route.Path, err.Error())
+				log.Printf("skipping Security openapi spec for %s:%s, %s", route.Method, route.Path, err.Error())
 				continue
 			}
 			pItem := path.(*spec.PathItem)
@@ -95,7 +95,7 @@ func enrichSwaggeerObjectSecurity(swo *spec.Swagger) {
 				pOption = pItem.Options
 			default:
 				// unsupported method
-				logrus.Warningf("skipping Security openapi spec for %s:%s, unsupported method '%s'", route.Method, route.Path, route.Method)
+				log.Printf("skipping Security openapi spec for %s:%s, unsupported method '%s'", route.Method, route.Path, route.Method)
 				continue
 			}
 
