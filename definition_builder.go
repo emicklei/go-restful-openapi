@@ -302,9 +302,7 @@ func (b definitionBuilder) buildArrayTypeProperty(field reflect.StructField, jso
 	if isPrimitive {
 		mapped := b.jsonSchemaType(elemTypeName)
 		prop.Items.Schema.Type = []string{mapped}
-		if prop.Enum != "" {
-			prop.Items.Schema.Enum = prop.Enum
-		}
+		prop.Items.Schema.Enum = prop.Enum
 	} else {
 		prop.Items.Schema.Ref = spec.MustCreateRef("#/definitions/" + elemTypeName)
 	}
