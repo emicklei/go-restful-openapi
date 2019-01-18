@@ -141,6 +141,13 @@ func buildParameter(r restful.Route, restfulParam *restful.Parameter, pattern st
 	p.Name = param.Name
 	p.Required = param.Required
 
+	if len(param.AllowableValues) > 0 {
+		p.Enum = make([]interface{}, 0, len(param.AllowableValues))
+		for key := range param.AllowableValues {
+			p.Enum = append(p.Enum, key)
+		}
+	}
+
 	if param.Kind == restful.PathParameterKind {
 		p.Pattern = pattern
 	}

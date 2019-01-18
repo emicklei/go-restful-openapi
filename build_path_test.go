@@ -81,6 +81,64 @@ func checkPattern(t *testing.T, path spec.PathItem, paramName string, pattern st
 	}
 }
 
+func TestRouteToPathForAllowableValues(t *testing.T) {
+	description := "get the <strong>a</strong> <em>b</em> test\nthis is the test description"
+	notes := "notes\nblah blah"
+
+	allowedCheeses := map[string]string{"cheddar": "cheddar", "feta": "feta", "colby-jack": "colby-jack", "mozzerella": "mozzerella"}
+	ws := new(restful.WebService)
+	ws.Path("/tests/{v}")
+	ws.Param(ws.PathParameter("v", "value of v").DefaultValue("default-v"))
+	ws.Consumes(restful.MIME_JSON)
+	ws.Produces(restful.MIME_XML)
+	ws.Route(ws.GET("/a/{cheese}").To(dummy).
+		Doc(description).
+		Notes(notes).
+		Param(ws.PathParameter("cheese", "value of cheese").DefaultValue("cheddar").AllowableValues(allowedCheeses)).
+		Param(ws.QueryParameter("q", "value of q").DefaultValue("default-q")).
+		Returns(200, "list of a b tests", []Sample{}).
+		Writes([]Sample{}))
+
+	p := buildPaths(ws, Config{})
+	t.Log(asJSON(p))
+
+	if p.Paths["/tests/{v}/a/{cheese}"].Get.Parameters[0].Type != "string" {
+		t.Error("Parameter type is not set.")
+	}
+
+	path, exists := p.Paths["/tests/{v}/a/{cheese}"]
+	if !exists {
+		t.Error("Expected path to exist after it was sanitized.")
+	}
+
+	if path.Get.Description != notes {
+		t.Errorf("GET description incorrect")
+	}
+	if path.Get.Summary != "get the a b test\nthis is the test description" {
+		t.Errorf("GET summary incorrect")
+	}
+	if len(path.Get.Parameters) != 3 {
+		t.Errorf("Path expected to have 3 parameters but had %d", len(path.Get.Parameters))
+	}
+	if path.Get.Parameters[1].Name != "cheese" || len(path.Get.Parameters[1].Enum) != len(allowedCheeses) {
+		t.Errorf("Path parameter 'cheese' expected to have enum of allowable values of lenght %d but was of length %d", len(allowedCheeses), len(path.Get.Parameters[1].Enum))
+	}
+	for _, cheeseIface := range path.Get.Parameters[1].Enum {
+		cheese := cheeseIface.(string)
+		if _, found := allowedCheeses[cheese]; !found {
+			t.Errorf("Path parameter 'cheese' had enum value of %s which was not found in the allowableValues map", cheese)
+		}
+	}
+
+	response := path.Get.Responses.StatusCodeResponses[200]
+	if response.Schema.Type[0] != "array" {
+		t.Errorf("response type incorrect")
+	}
+	if response.Schema.Items.Schema.Ref.String() != "#/definitions/restfulspec.Sample" {
+		t.Errorf("response element type incorrect")
+	}
+}
+
 func TestMultipleMethodsRouteToPath(t *testing.T) {
 	ws := new(restful.WebService)
 	ws.Path("/tests/a")
