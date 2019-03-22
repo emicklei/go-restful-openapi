@@ -22,6 +22,7 @@ func TestRouteToPath(t *testing.T) {
 		Param(ws.PathParameter("b", "value of b").DefaultValue("default-b")).
 		Param(ws.QueryParameter("q", "value of q").DefaultValue("default-q")).
 		Returns(200, "list of a b tests", []Sample{}).
+		DefaultReturns("default", Sample{}).
 		Writes([]Sample{}))
 	ws.Route(ws.GET("/a/{b}/{c:[a-z]+}/{d:[1-9]+}/e").To(dummy).
 		Param(ws.PathParameter("b", "value of b").DefaultValue("default-b")).
@@ -59,6 +60,10 @@ func TestRouteToPath(t *testing.T) {
 	response := p.Paths["/tests/{v}/a/{b}"].Get.Responses.StatusCodeResponses[200]
 	if response.Schema.Type[0] != "array" {
 		t.Errorf("response type incorrect")
+	}
+	defaultResponse := p.Paths["/tests/{v}/a/{b}"].Get.Responses.Default
+	if defaultResponse.Description != "default" {
+		t.Errorf("default response description incorrect")
 	}
 	if response.Schema.Items.Schema.Ref.String() != "#/definitions/restfulspec.Sample" {
 		t.Errorf("response element type incorrect")

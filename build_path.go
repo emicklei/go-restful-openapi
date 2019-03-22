@@ -100,9 +100,10 @@ func buildOperation(ws *restful.WebService, r restful.Route, patterns map[string
 	for k, v := range r.ResponseErrors {
 		r := buildResponse(v, cfg)
 		props.StatusCodeResponses[k] = r
-		if 200 == k { // any 2xx code?
-			o.Responses.Default = &r
-		}
+	}
+	if r.DefaultResponse != nil {
+		r := buildResponse(*r.DefaultResponse, cfg)
+		o.Responses.Default = &r
 	}
 	if len(o.Responses.StatusCodeResponses) == 0 {
 		o.Responses.StatusCodeResponses[200] = spec.Response{ResponseProps: spec.ResponseProps{Description: http.StatusText(http.StatusOK)}}
