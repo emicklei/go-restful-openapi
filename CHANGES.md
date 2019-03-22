@@ -1,5 +1,11 @@
 # changes to the go-restful-openapi package
 
+## v0.13.0
+
+    - Do not use 200 as default response, instead use the one explicitly defined.
+    - support time.Duration
+    - Fix Parameter 'AllowableValues' to populate swagger definition
+
 ## v0.12.0
 
     - add support for time.Duration
