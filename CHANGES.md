@@ -1,5 +1,11 @@
 # changes to the go-restful-openapi package
 
+## v0.14.1
+    - Add Host field to Config which is copied into Swagger object
+    - Enable CORS by default as per the documentation (#58)
+    - add go module
+    - update dependencies
+
 ## v0.13.0
 
     - Do not use 200 as default response, instead use the one explicitly defined.
