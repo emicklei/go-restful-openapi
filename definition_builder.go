@@ -52,8 +52,7 @@ func (b definitionBuilder) addModel(st reflect.Type, nameOverride string) *spec.
 	// JSON arrays, except that []byte encodes as a base64-encoded string.
 	// If we see a []byte here, treat it at as a primitive type (string)
 	// and deal with it in buildArrayTypeProperty.
-	if (st.Kind() == reflect.Slice || st.Kind() == reflect.Array) &&
-		st.Elem().Kind() == reflect.Uint8 {
+	if b.isByteArrayType(st) {
 		return nil
 	}
 	// see if we already have visited this model
@@ -330,18 +329,25 @@ func (b definitionBuilder) buildMapTypeProperty(field reflect.StructField, jsonN
 		prop.AdditionalProperties = &spec.SchemaOrBool{
 			Schema: &spec.Schema{},
 		}
-		if isPrimitive {
-			mapped := b.jsonSchemaType(elemTypeName)
-			prop.AdditionalProperties.Schema.Type = []string{mapped}
+		// golang encoding/json packages says array and slice values encode as
+		// JSON arrays, except that []byte encodes as a base64-encoded string.
+		// If we see a []byte here, treat it at as a string
+		if b.isByteArrayType(fieldType.Elem()) {
+			prop.AdditionalProperties.Schema.Type = []string{"string"}
 		} else {
-			prop.AdditionalProperties.Schema.Ref = spec.MustCreateRef("#/definitions/" + elemTypeName)
-		}
-		// add|overwrite model for element type
-		if fieldType.Elem().Kind() == reflect.Ptr {
-			fieldType = fieldType.Elem()
-		}
-		if !isPrimitive {
-			b.addModel(fieldType.Elem(), elemTypeName)
+			if isPrimitive {
+				mapped := b.jsonSchemaType(elemTypeName)
+				prop.AdditionalProperties.Schema.Type = []string{mapped}
+			} else {
+				prop.AdditionalProperties.Schema.Ref = spec.MustCreateRef("#/definitions/" + elemTypeName)
+			}
+			// add|overwrite model for element type
+			if fieldType.Elem().Kind() == reflect.Ptr {
+				fieldType = fieldType.Elem()
+			}
+			if !isPrimitive {
+				b.addModel(fieldType.Elem(), elemTypeName)
+			}
 		}
 	}
 	return jsonName, prop
@@ -414,6 +420,12 @@ func keyFrom(st reflect.Type, cfg Config) string {
 		key = strings.Replace(key, "[]", "||", -1)
 	}
 	return key
+}
+
+// Does the type represent a []byte?
+func (b definitionBuilder) isByteArrayType(t reflect.Type) bool {
+	return (t.Kind() == reflect.Slice || t.Kind() == reflect.Array) &&
+		t.Elem().Kind() == reflect.Uint8
 }
 
 // see also https://golang.org/ref/spec#Numeric_types
