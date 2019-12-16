@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	restful "github.com/emicklei/go-restful"
+	restful "github.com/emicklei/go-restful/v3"
 	"github.com/go-openapi/spec"
 )
 

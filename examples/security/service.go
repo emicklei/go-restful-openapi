@@ -1,7 +1,7 @@
 package main
 
-import restful "github.com/emicklei/go-restful"
-import restfulspec "github.com/emicklei/go-restful-openapi"
+import restful "github.com/emicklei/go-restful/v3"
+import restfulspec "github.com/emicklei/go-restful-openapi/v2"
 
 type ExampleService struct{}
 type ExampleReq struct{}

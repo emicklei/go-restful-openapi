@@ -2,12 +2,13 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/emicklei/go-restful"
-	"github.com/emicklei/go-restful-openapi"
-	spec2 "github.com/go-openapi/spec"
 	"io/ioutil"
 	"reflect"
 	"testing"
+
+	restfulspec "github.com/emicklei/go-restful-openapi/v2"
+	"github.com/emicklei/go-restful/v3"
+	spec2 "github.com/go-openapi/spec"
 )
 
 func TestAppleDef(t *testing.T) {
@@ -20,9 +21,9 @@ func TestAppleDef(t *testing.T) {
 	expected := asStruct(string(raw))
 
 	config := restfulspec.Config{
-		WebServices:    []*restful.WebService{ws}, // you control what services are visible
-		WebServicesURL: "http://localhost:8080",
-		APIPath:        "/apidocs.json",
+		WebServices:                   []*restful.WebService{ws}, // you control what services are visible
+		WebServicesURL:                "http://localhost:8080",
+		APIPath:                       "/apidocs.json",
 		PostBuildSwaggerObjectHandler: enrichSwaggerObject}
 
 	actual := restfulspec.BuildSwagger(config)
