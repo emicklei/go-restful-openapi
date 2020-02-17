@@ -1,6 +1,7 @@
 package restfulspec
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/go-openapi/spec"
@@ -10,6 +11,7 @@ type Apple struct {
 	Species string
 	Volume  int `json:"vol"`
 	Things  *[]string
+	Weight  json.Number
 }
 
 func TestAppleDef(t *testing.T) {
@@ -21,7 +23,7 @@ func TestAppleDef(t *testing.T) {
 	}
 
 	schema := db.Definitions["restfulspec.Apple"]
-	if got, want := len(schema.Required), 3; got != want {
+	if got, want := len(schema.Required), 4; got != want {
 		t.Errorf("got %v want %v", got, want)
 	}
 	if got, want := schema.Required[0], "Species"; got != want {
@@ -37,6 +39,9 @@ func TestAppleDef(t *testing.T) {
 		t.Errorf("got %v want %v", got, want)
 	}
 	if got, want := schema.Properties["Things"].Items.Schema.Ref.String(), ""; got != want {
+		t.Errorf("got %v want %v", got, want)
+	}
+	if got, want := schema.Properties["Weight"].Type.Contains("number"), true; got != want {
 		t.Errorf("got %v want %v", got, want)
 	}
 }

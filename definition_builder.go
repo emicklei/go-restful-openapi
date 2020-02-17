@@ -190,10 +190,6 @@ func (b definitionBuilder) buildProperty(field reflect.StructField, model *spec.
 	case fieldKind == reflect.Ptr:
 		jsonName, prop := b.buildPointerTypeProperty(field, jsonName, modelName)
 		return jsonName, modelDescription, prop
-	case fieldKind == reflect.String:
-		stringt := "string"
-		prop.Type = []string{stringt}
-		return jsonName, modelDescription, prop
 	case fieldKind == reflect.Map:
 		jsonName, prop := b.buildMapTypeProperty(field, jsonName, modelName)
 		return jsonName, modelDescription, prop
@@ -433,7 +429,7 @@ func (b definitionBuilder) isPrimitiveType(modelName string) bool {
 	if len(modelName) == 0 {
 		return false
 	}
-	return strings.Contains("uint uint8 uint16 uint32 uint64 int int8 int16 int32 int64 float32 float64 bool string byte rune time.Time time.Duration", modelName)
+	return strings.Contains("uint uint8 uint16 uint32 uint64 int int8 int16 int32 int64 float32 float64 bool string byte rune time.Time time.Duration json.Number", modelName)
 }
 
 // jsonNameOfField returns the name of the field as it should appear in JSON format
@@ -467,11 +463,13 @@ func (b definitionBuilder) jsonSchemaType(modelName string) string {
 		"int64": "integer",
 
 		"byte":      "integer",
+		"string":    "string",
 		"float64":   "number",
 		"float32":   "number",
 		"bool":      "boolean",
 		"time.Time": "string",
 		"time.Duration": "integer",
+		"json.Number": "number",
 	}
 	mapped, ok := schemaMap[modelName]
 	if !ok {
@@ -499,6 +497,8 @@ func (b definitionBuilder) jsonSchemaFormat(modelName string) string {
 		"*time.Time": "date-time",
 		"time.Duration": "integer",
 		"*time.Duration": "integer",
+		"json.Number": "double",
+		"*json.Number": "double",
 	}
 	mapped, ok := schemaMap[modelName]
 	if !ok {
