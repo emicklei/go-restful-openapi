@@ -7,11 +7,16 @@ import (
 	"github.com/go-openapi/spec"
 )
 
+type StringAlias string
+type IntAlias int
+
 type Apple struct {
-	Species string
-	Volume  int `json:"vol"`
-	Things  *[]string
-	Weight  json.Number
+	Species     string
+	Volume      int `json:"vol"`
+	Things      *[]string
+	Weight      json.Number
+	StringAlias StringAlias
+	IntAlias    IntAlias
 }
 
 func TestAppleDef(t *testing.T) {
@@ -23,7 +28,7 @@ func TestAppleDef(t *testing.T) {
 	}
 
 	schema := db.Definitions["restfulspec.Apple"]
-	if got, want := len(schema.Required), 4; got != want {
+	if got, want := len(schema.Required), 6; got != want {
 		t.Errorf("got %v want %v", got, want)
 	}
 	if got, want := schema.Required[0], "Species"; got != want {
@@ -44,6 +49,12 @@ func TestAppleDef(t *testing.T) {
 	if got, want := schema.Properties["Weight"].Type.Contains("number"), true; got != want {
 		t.Errorf("got %v want %v", got, want)
 	}
+	if got, want := schema.Properties["StringAlias"].Type.Contains("string"), true; got != want {
+		t.Errorf("got %v want %v", got, want)
+	}
+	if got, want := schema.Properties["IntAlias"].Type.Contains("integer"), true; got != want {
+		t.Errorf("got %v want %v", got, want)
+	}
 }
 
 type MyDictionaryResponse struct {
@@ -51,7 +62,6 @@ type MyDictionaryResponse struct {
 	Dictionary2 map[string]interface{}     `json:"dictionary2"`
 	Dictionary3 map[string][]byte          `json:"dictionary3"`
 	Dictionary4 map[string]string          `json:"dictionary4"`
-
 }
 type DictionaryValue struct {
 	Key1 string `json:"key1"`
