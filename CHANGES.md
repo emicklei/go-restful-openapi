@@ -1,5 +1,11 @@
 # changes to the go-restful-openapi package
 
+# v2+ versions are using the Go module of go-restful v3+
+
+## v1.3.0 + v2.1.0
+    - add json.Number handling (PR #61)
+    - add type alias support for primitives (PR #61)
+
 ## v1.2.0
 
     - handle map[string][]byte (#59)
