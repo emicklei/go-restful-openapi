@@ -73,6 +73,11 @@ func (b definitionBuilder) addModel(st reflect.Type, nameOverride string) *spec.
 	if st.Kind() == reflect.Slice || st.Kind() == reflect.Array {
 		st = st.Elem()
 	}
+	if st.Kind() == reflect.Map {
+		_, sm = b.buildMapType(st, "value", modelName)
+		b.Definitions[modelName] = sm
+		return &sm
+	}
 	// check for structure or primitive type
 	if st.Kind() != reflect.Struct {
 		return &sm
@@ -184,7 +189,7 @@ func (b definitionBuilder) buildProperty(field reflect.StructField, model *spec.
 	case fieldKind == reflect.Struct:
 		jsonName, prop := b.buildStructTypeProperty(field, jsonName, model)
 		return jsonName, modelDescription, prop
-	case fieldKind == reflect.Slice || fieldKind == reflect.Array:
+	case b.isSliceOrArrayType(fieldKind):
 		jsonName, prop := b.buildArrayTypeProperty(field, jsonName, modelName)
 		return jsonName, modelDescription, prop
 	case fieldKind == reflect.Ptr:
@@ -311,44 +316,62 @@ func (b definitionBuilder) buildArrayTypeProperty(field reflect.StructField, jso
 }
 
 func (b definitionBuilder) buildMapTypeProperty(field reflect.StructField, jsonName, modelName string) (nameJson string, prop spec.Schema) {
+	nameJson, prop = b.buildMapType(field.Type, jsonName, modelName)
 	setPropertyMetadata(&prop, field)
-	fieldType := field.Type
+	return nameJson, prop
+}
+
+func (b definitionBuilder) buildMapType(mapType reflect.Type, jsonName, modelName string) (nameJson string, prop spec.Schema) {
 	var pType = "object"
 	prop.Type = []string{pType}
 
 	// As long as the element isn't an interface, we should be able to figure out what the
 	// intended type is and represent it in `AdditionalProperties`.
 	// See: https://swagger.io/docs/specification/data-models/dictionaries/
-	if fieldType.Elem().Kind().String() != "interface" {
-		isPrimitive := b.isPrimitiveType(fieldType.Elem().Name(), fieldType.Elem().Kind())
-		elemTypeName := b.getElementTypeName(modelName, jsonName, fieldType.Elem())
+	if mapType.Elem().Kind().String() != "interface" {
+		isSlice := b.isSliceOrArrayType(mapType.Elem().Kind())
+		if isSlice && !b.isByteArrayType(mapType.Elem()) {
+			mapType = mapType.Elem()
+		}
+		isPrimitive := b.isPrimitiveType(mapType.Elem().Name(), mapType.Elem().Kind())
+		elemTypeName := b.getElementTypeName(modelName, jsonName, mapType.Elem())
 		prop.AdditionalProperties = &spec.SchemaOrBool{
 			Schema: &spec.Schema{},
 		}
 		// golang encoding/json packages says array and slice values encode as
 		// JSON arrays, except that []byte encodes as a base64-encoded string.
 		// If we see a []byte here, treat it at as a string
-		if b.isByteArrayType(fieldType.Elem()) {
+		if b.isByteArrayType(mapType.Elem()) {
 			prop.AdditionalProperties.Schema.Type = []string{"string"}
 		} else {
-			if isPrimitive {
-				mapped := b.jsonSchemaType(elemTypeName, fieldType.Elem().Kind())
+			if isSlice {
+				var item *spec.Schema
+				if isPrimitive {
+					mapped := b.jsonSchemaType(elemTypeName, mapType.Kind())
+					item = &spec.Schema{}
+					item.Type = []string{mapped}
+					item.Format = b.jsonSchemaFormat(elemTypeName, mapType.Kind())
+				} else {
+					item = spec.RefProperty("#/definitions/" + elemTypeName)
+				}
+				prop.AdditionalProperties.Schema = spec.ArrayProperty(item)
+			} else if isPrimitive {
+				mapped := b.jsonSchemaType(elemTypeName, mapType.Elem().Kind())
 				prop.AdditionalProperties.Schema.Type = []string{mapped}
 			} else {
 				prop.AdditionalProperties.Schema.Ref = spec.MustCreateRef("#/definitions/" + elemTypeName)
 			}
 			// add|overwrite model for element type
-			if fieldType.Elem().Kind() == reflect.Ptr {
-				fieldType = fieldType.Elem()
+			if mapType.Elem().Kind() == reflect.Ptr {
+				mapType = mapType.Elem()
 			}
 			if !isPrimitive {
-				b.addModel(fieldType.Elem(), elemTypeName)
+				b.addModel(mapType.Elem(), elemTypeName)
 			}
 		}
 	}
 	return jsonName, prop
 }
-
 func (b definitionBuilder) buildPointerTypeProperty(field reflect.StructField, jsonName, modelName string) (nameJson string, prop spec.Schema) {
 	setPropertyMetadata(&prop, field)
 	fieldType := field.Type
@@ -419,6 +442,10 @@ func keyFrom(st reflect.Type, cfg Config) string {
 		key = strings.Replace(key, "[]", "||", -1)
 	}
 	return key
+}
+
+func (b definitionBuilder) isSliceOrArrayType(t reflect.Kind) bool {
+	return t == reflect.Slice || t == reflect.Array
 }
 
 // Does the type represent a []byte?
