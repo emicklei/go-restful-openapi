@@ -39,6 +39,9 @@ func (b definitionBuilder) addModel(st reflect.Type, nameOverride string) *spec.
 	if st.Kind() == reflect.Ptr {
 		st = st.Elem()
 	}
+	if b.isSliceOrArrayType(st.Kind()) {
+		st = st.Elem()
+	}
 
 	modelName := keyFrom(st, b.Config)
 	if nameOverride != "" {
@@ -69,10 +72,6 @@ func (b definitionBuilder) addModel(st reflect.Type, nameOverride string) *spec.
 	// reference the model before further initializing (enables recursive structs)
 	b.Definitions[modelName] = sm
 
-	// check for slice or array
-	if st.Kind() == reflect.Slice || st.Kind() == reflect.Array {
-		st = st.Elem()
-	}
 	if st.Kind() == reflect.Map {
 		_, sm = b.buildMapType(st, "value", modelName)
 		b.Definitions[modelName] = sm
