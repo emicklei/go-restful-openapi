@@ -2,6 +2,9 @@
 
 # v2+ versions are using the Go module of go-restful v3+
 
+## v1.4.0 + v2.2.0
+    - Allow maps as top level types and support maps to slices (#63)
+
 ## v1.3.0 + v2.1.0
     - add json.Number handling (PR #61)
     - add type alias support for primitives (PR #61)
