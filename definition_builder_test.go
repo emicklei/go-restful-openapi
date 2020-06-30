@@ -337,3 +337,48 @@ func TestReturningStringToSliceObjectDictionary(t *testing.T) {
 		}
 	}
 }
+
+func TestAddSliceOfPrimitiveCreatesNoType(t *testing.T) {
+	db := definitionBuilder{Definitions: spec.Definitions{}, Config: Config{}}
+	db.addModelFrom([]string{})
+
+	if got, want := len(db.Definitions), 0; got != want {
+		t.Errorf("got %v want %v", got, want)
+	}
+}
+
+type StructForSlice struct {
+	Value string
+}
+
+func TestAddSliceOfStructCreatesTypeForStruct(t *testing.T) {
+	db := definitionBuilder{Definitions: spec.Definitions{}, Config: Config{}}
+	db.addModelFrom([]StructForSlice{})
+
+	if got, want := len(db.Definitions), 1; got != want {
+		t.Errorf("got %v want %v", got, want)
+	}
+	schema, schemaFound := db.Definitions["restfulspec.StructForSlice"]
+	if !schemaFound {
+		t.Errorf("could not find schema")
+	} else {
+		if got, want := len(schema.Required), 1; got != want {
+			t.Errorf("got %v want %v", got, want)
+		} else {
+			if got, want := schema.Required[0], "Value"; got != want {
+				t.Errorf("got %v want %v", got, want)
+			}
+		}
+		if got, want := len(schema.Properties), 1; got != want {
+			t.Errorf("got %v want %v", got, want)
+		} else {
+			if property, found := schema.Properties["Value"]; !found {
+				t.Errorf("could not find property")
+			} else {
+				if property.AdditionalProperties != nil {
+					t.Errorf("unexpected additional properties")
+				}
+			}
+		}
+	}
+}
