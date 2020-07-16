@@ -2,9 +2,9 @@ package restfulspec
 
 import (
 	"encoding/json"
-	"testing"
-
 	"github.com/go-openapi/spec"
+	"google.golang.org/protobuf/runtime/protoimpl"
+	"testing"
 )
 
 type StringAlias string
@@ -380,5 +380,29 @@ func TestAddSliceOfStructCreatesTypeForStruct(t *testing.T) {
 				}
 			}
 		}
+	}
+}
+
+type ProtobufMetaData struct {
+	state protoimpl.MessageState
+}
+
+func TestPotentialStackOverflow(t *testing.T) {
+	db := definitionBuilder{Definitions: spec.Definitions{}, Config: Config{}}
+	db.addModelFrom(ProtobufMetaData{})
+
+	if got, want := len(db.Definitions), 38; got != want {
+		t.Errorf("got %v want %v", got, want)
+	}
+
+	schema := db.Definitions["restfulspec.ProtobufMetaData"]
+	if got, want := len(schema.Required), 1; got != want {
+		t.Errorf("got %v want %v", got, want)
+	}
+	if got, want := schema.Required[0], "state"; got != want {
+		t.Errorf("got %v want %v", got, want)
+	}
+	if got, want := schema.ID, ""; got != want {
+		t.Errorf("got %v want %v", got, want)
 	}
 }

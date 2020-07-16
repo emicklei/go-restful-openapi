@@ -6,6 +6,7 @@ require (
 	github.com/go-openapi/spec v0.19.5
 	github.com/go-openapi/swag v0.19.6 // indirect
 	github.com/json-iterator/go v1.1.8 // indirect
+	google.golang.org/protobuf v1.23.0
 )
 
 go 1.13
