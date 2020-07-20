@@ -3,7 +3,6 @@ package restfulspec
 import (
 	"encoding/json"
 	"github.com/go-openapi/spec"
-	"google.golang.org/protobuf/runtime/protoimpl"
 	"testing"
 )
 
@@ -383,23 +382,31 @@ func TestAddSliceOfStructCreatesTypeForStruct(t *testing.T) {
 	}
 }
 
-type ProtobufMetaData struct {
-	state protoimpl.MessageState
-}
+type (
+	X struct {
+		y Y
+	}
+	Y struct {
+		zz []Z
+	}
+	Z struct {
+		Y
+	}
+)
 
 func TestPotentialStackOverflow(t *testing.T) {
 	db := definitionBuilder{Definitions: spec.Definitions{}, Config: Config{}}
-	db.addModelFrom(ProtobufMetaData{})
+	db.addModelFrom(X{})
 
-	if got, want := len(db.Definitions), 38; got != want {
+	if got, want := len(db.Definitions), 3; got != want {
 		t.Errorf("got %v want %v", got, want)
 	}
 
-	schema := db.Definitions["restfulspec.ProtobufMetaData"]
+	schema := db.Definitions["restfulspec.X"]
 	if got, want := len(schema.Required), 1; got != want {
 		t.Errorf("got %v want %v", got, want)
 	}
-	if got, want := schema.Required[0], "state"; got != want {
+	if got, want := schema.Required[0], "y"; got != want {
 		t.Errorf("got %v want %v", got, want)
 	}
 	if got, want := schema.ID, ""; got != want {
