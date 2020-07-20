@@ -6,6 +6,8 @@ github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+github.com/emicklei/go-restful v2.11.1+incompatible h1:CjKsv3uWcCMvySPQYKxO8XX3f9zD4FeZRsW4G0B4ffE=
+github.com/emicklei/go-restful v2.11.1+incompatible/go.mod h1:otzb+WCGbkyDHkqmQmT5YD2WR4BBwUdeQoFo8l/7tVs=
 github.com/emicklei/go-restful/v3 v3.0.0-rc2 h1:UkWzdUozgtjQzYuqSNQy+PuYxD4/DCzYucakgzWKolU=
 github.com/emicklei/go-restful/v3 v3.0.0-rc2/go.mod h1:6n3XBCmQQb25CM2LCACGz8ukIrRry+4bhvbpWn3mrbc=
 github.com/go-openapi/jsonpointer v0.19.2/go.mod h1:3akKfEdA7DF1sugOqz1dVQHBcuDBPKZGEoHC/NkiQRg=
@@ -14,6 +16,8 @@ github.com/go-openapi/jsonpointer v0.19.3/go.mod h1:Pl9vOtqEWErmShwVjC8pYs9cog34
 github.com/go-openapi/jsonreference v0.19.2/go.mod h1:jMjeRr2HHw6nAVajTXJ4eiUwohSTlpa0o73RUL1owJc=
 github.com/go-openapi/jsonreference v0.19.3 h1:5cxNfTy0UVC3X8JL5ymxzyoUZmo8iZb+jeTWn7tUa8o=
 github.com/go-openapi/jsonreference v0.19.3/go.mod h1:rjx6GuL8TTa9VaixXglHmQmIL98+wF9xc8zWvFonSJ8=
+github.com/go-openapi/spec v0.0.0-20180415031709-bcff419492ee h1:eo0HQoNFtbiEc7+1gRF9pgW6azx8a1cO2fXcqq1MuD0=
+github.com/go-openapi/spec v0.0.0-20180415031709-bcff419492ee/go.mod h1:J8+jY1nAiCcj+friV/PDoE1/3eeccG9LYBs0tYvLOWc=
 github.com/go-openapi/spec v0.19.5 h1:Xm0Ao53uqnk9QE/LlYV5DEU09UAgpliA85QoT9LzqPw=
 github.com/go-openapi/spec v0.19.5/go.mod h1:Hm2Jr4jv8G1ciIAo+frC/Ft+rR2kQDh8JHKHb3gWUSk=
 github.com/go-openapi/swag v0.19.2/go.mod h1:POnQmlKehdgb5mhVOsnJFsivZCEZ/vjK9gh66Z9tfKk=
