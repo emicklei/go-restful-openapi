@@ -384,13 +384,10 @@ func TestAddSliceOfStructCreatesTypeForStruct(t *testing.T) {
 
 type (
 	X struct {
-		y Y
+		yy []Y
 	}
 	Y struct {
-		zz []Z
-	}
-	Z struct {
-		Y
+		X
 	}
 )
 
@@ -398,7 +395,7 @@ func TestPotentialStackOverflow(t *testing.T) {
 	db := definitionBuilder{Definitions: spec.Definitions{}, Config: Config{}}
 	db.addModelFrom(X{})
 
-	if got, want := len(db.Definitions), 3; got != want {
+	if got, want := len(db.Definitions), 2; got != want {
 		t.Errorf("got %v want %v", got, want)
 	}
 
@@ -406,7 +403,7 @@ func TestPotentialStackOverflow(t *testing.T) {
 	if got, want := len(schema.Required), 1; got != want {
 		t.Errorf("got %v want %v", got, want)
 	}
-	if got, want := schema.Required[0], "y"; got != want {
+	if got, want := schema.Required[0], "yy"; got != want {
 		t.Errorf("got %v want %v", got, want)
 	}
 	if got, want := schema.ID, ""; got != want {
