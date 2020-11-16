@@ -2,8 +2,9 @@ package restfulspec
 
 import (
 	"encoding/json"
-	"github.com/go-openapi/spec"
 	"testing"
+
+	"github.com/go-openapi/spec"
 )
 
 type StringAlias string
@@ -409,4 +410,22 @@ func TestPotentialStackOverflow(t *testing.T) {
 	if got, want := schema.ID, ""; got != want {
 		t.Errorf("got %v want %v", got, want)
 	}
+}
+
+type Foo struct {
+	b *Bar
+}
+type Bar struct {
+	Foo `json:"foo"`
+	B   struct {
+		Foo
+		f Foo
+		b []*Bar
+	}
+}
+
+func TestRecursiveFieldStructure(t *testing.T) {
+	db := definitionBuilder{Definitions: spec.Definitions{}, Config: Config{}}
+	db.addModelFrom(Foo{})
+	t.Log(db)
 }
