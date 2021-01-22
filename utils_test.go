@@ -4,12 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	restful "github.com/emicklei/go-restful/v3"
+	"github.com/go-openapi/spec"
 	"reflect"
 	"strings"
 	"testing"
-
-	restful "github.com/emicklei/go-restful/v3"
-	"github.com/go-openapi/spec"
 )
 
 func dummy(i *restful.Request, o *restful.Response) {}
@@ -59,6 +58,8 @@ func compareJSON(t *testing.T, actualJSONAsString string, expectedJSONAsString s
 	}
 	return true
 }
+
+// nolint:unused
 func withLineNumbers(content string) string {
 	var buffer bytes.Buffer
 	lines := strings.Split(content, "\n")

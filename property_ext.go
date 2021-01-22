@@ -20,6 +20,18 @@ func setDefaultValue(prop *spec.Schema, field reflect.StructField) {
 	}
 }
 
+func setIsNullableValue(prop *spec.Schema, field reflect.StructField) {
+	if tag := field.Tag.Get("x-nullable"); tag != "" {
+		if prop.Extensions == nil {
+			prop.Extensions = make(spec.Extensions, 0)
+		}
+
+		value, err := strconv.ParseBool(tag)
+
+		prop.Extensions["x-nullable"] = value && err == nil
+	}
+}
+
 func setEnumValues(prop *spec.Schema, field reflect.StructField) {
 	// We use | to separate the enum values.  This value is chosen
 	// since its unlikely to be useful in actual enumeration values.
@@ -101,4 +113,5 @@ func setPropertyMetadata(prop *spec.Schema, field reflect.StructField) {
 	setUniqueItems(prop, field)
 	setType(prop, field)
 	setReadOnly(prop, field)
+	setIsNullableValue(prop, field)
 }
