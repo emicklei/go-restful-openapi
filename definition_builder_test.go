@@ -415,6 +415,8 @@ func TestPotentialStackOverflow(t *testing.T) {
 type Foo struct {
 	b *Bar
 }
+
+// nolint:unused
 type Bar struct {
 	Foo `json:"foo"`
 	B   struct {
