@@ -7,20 +7,23 @@ import (
 	"testing"
 )
 
+// nolint:paralleltest
 func TestThatExtraTagsAreReadIntoModel(t *testing.T) {
 	type fakeint int
 	type fakearray string
 	type Anything struct {
-		Name      string    `description:"name" modelDescription:"a test" readOnly:"false"`
-		Size      int       `minimum:"0" maximum:"10"`
-		Stati     string    `enum:"off|on" default:"on" modelDescription:"more description"`
-		ID        string    `unique:"true"`
-		FakeInt   fakeint   `type:"integer"`
-		FakeArray fakearray `type:"[]string"`
-		IP        net.IP    `type:"string"`
-		Password  string
-		Optional  bool   `optional:"true"`
-		Created   string `readOnly:"true"`
+		Name             string    `description:"name" modelDescription:"a test" readOnly:"false"`
+		Size             int       `minimum:"0" maximum:"10"`
+		Stati            string    `enum:"off|on" default:"on" modelDescription:"more description"`
+		ID               string    `unique:"true"`
+		FakeInt          fakeint   `type:"integer"`
+		FakeArray        fakearray `type:"[]string"`
+		IP               net.IP    `type:"string"`
+		Password         string
+		Optional         bool   `optional:"true"`
+		Created          string `readOnly:"true"`
+		NullableField    string `x-nullable:"true"`
+		NotNullableField string `x-nullable:"false"`
 	}
 	d := definitionsFromStruct(Anything{})
 	props, _ := d["restfulspec.Anything"]
@@ -80,6 +83,14 @@ func TestThatExtraTagsAreReadIntoModel(t *testing.T) {
 		t.Errorf("got %v want %v", got, want)
 	}
 	if got, want := props.Description, "a test\nmore description"; got != want {
+		t.Errorf("got %v want %v", got, want)
+	}
+	p10, _ := props.Properties["NullableField"]
+	if got, want := p10.Extensions["x-nullable"], true; got != want {
+		t.Errorf("got %v want %v", got, want)
+	}
+	p11, _ := props.Properties["NotNullableField"]
+	if got, want := p11.Extensions["x-nullable"], false; got != want {
 		t.Errorf("got %v want %v", got, want)
 	}
 }

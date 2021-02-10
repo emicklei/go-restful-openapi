@@ -7,6 +7,7 @@ import (
 	restful "github.com/emicklei/go-restful/v3"
 )
 
+// nolint:paralleltest
 func TestBuildSwagger(t *testing.T) {
 	path := "/testPath"
 
@@ -28,6 +29,7 @@ func TestBuildSwagger(t *testing.T) {
 
 }
 
+// nolint:paralleltest
 func TestEnablingCORS(t *testing.T) {
 	ws := NewOpenAPIService(Config{})
 	wc := restful.NewContainer().Add(ws)
@@ -44,6 +46,7 @@ func TestEnablingCORS(t *testing.T) {
 	}
 }
 
+// nolint:paralleltest
 func TestDisablingCORS(t *testing.T) {
 	ws := NewOpenAPIService(Config{DisableCORS: true})
 	wc := restful.NewContainer().Add(ws)
