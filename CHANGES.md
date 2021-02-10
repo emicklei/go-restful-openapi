@@ -2,6 +2,9 @@
 
 # v2+ versions are using the Go module of go-restful v3+
 
+## [2020-02-10] v2.3.0
+    - Support for custom attribute "x-nullable" (#70)
+
 ## v1.4.0 + v2.2.0
     - Allow maps as top level types and support maps to slices (#63)
 
