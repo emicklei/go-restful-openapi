@@ -3,8 +3,9 @@ package restfulspec
 import (
 	"testing"
 
-	restful "github.com/emicklei/go-restful/v3"
 	"github.com/go-openapi/spec"
+
+	"github.com/emicklei/go-restful/v3"
 )
 
 func TestRouteToPath(t *testing.T) {
@@ -18,6 +19,8 @@ func TestRouteToPath(t *testing.T) {
 	ws.Produces(restful.MIME_XML)
 	ws.Route(ws.GET("/a/{b}").To(dummy).
 		Doc(description).
+		Metadata(KeyOpenAPITags, []string{"tests"}).
+		AddExtension("x-restful-test", "test value").
 		Notes(notes).
 		Param(ws.PathParameter("b", "value of b").DefaultValue("default-b")).
 		Param(ws.QueryParameter("q", "value of q").DefaultValue("default-q")).
@@ -36,8 +39,12 @@ func TestRouteToPath(t *testing.T) {
 	p := buildPaths(ws, Config{})
 	t.Log(asJSON(p))
 
-	if p.Paths["/tests/{v}/a/{b}"].Get.Parameters[0].Type != "string" {
+	if op := p.Paths["/tests/{v}/a/{b}"].Get; op.Parameters[0].Type != "string" {
 		t.Error("Parameter type is not set.")
+	} else if op.Extensions["x-restful-test"] != "test value" {
+		t.Error("Extensions not set.")
+	} else if len(op.Tags) != 1 || op.Tags[0] != "tests" {
+		t.Error("Metadata/openapi.tags not set.")
 	}
 	if _, exists := p.Paths["/tests/{v}/a/{b}/{c}/{d}/e"]; !exists {
 		t.Error("Expected path to exist after it was sanitized.")
