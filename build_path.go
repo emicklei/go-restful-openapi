@@ -93,7 +93,7 @@ func buildOperation(ws *restful.WebService, r restful.Route, patterns map[string
 		}
 	}
 
-	extractVendorExtensions(&o.VendorExtensible, r.ExtensionProps)
+	extractVendorExtensions(&o.VendorExtensible, r.ExtensionProperties)
 
 	// collect any path parameters
 	for _, param := range ws.PathParameters() {
@@ -137,7 +137,7 @@ func stringAutoType(ambiguous string) interface{} {
 	return ambiguous
 }
 
-func extractVendorExtensions(extensible *spec.VendorExtensible, extensions restful.ExtensionProps) {
+func extractVendorExtensions(extensible *spec.VendorExtensible, extensions restful.ExtensionProperties) {
 	if len(extensions.Extensions) > 0 {
 		for key := range extensions.Extensions {
 			if strings.HasPrefix(key, ExtensionPrefix) {
@@ -200,7 +200,7 @@ func buildParameter(r restful.Route, restfulParam *restful.Parameter, pattern st
 		p.Format = param.DataFormat
 	}
 
-	extractVendorExtensions(&p.VendorExtensible, param.ExtensionProps)
+	extractVendorExtensions(&p.VendorExtensible, param.ExtensionProperties)
 
 	return p
 }
@@ -240,7 +240,7 @@ func buildResponse(e restful.ResponseError, cfg Config) (r spec.Response) {
 			}
 		}
 	}
-	extractVendorExtensions(&r.VendorExtensible, e.ExtensionProps)
+	extractVendorExtensions(&r.VendorExtensible, e.ExtensionProperties)
 	return r
 }
 

@@ -2,6 +2,10 @@
 
 # v2+ versions are using the Go module of go-restful v3+
 
+## [2021-09-18] v2.4.0
+
+- add support for vendor extensions (#)
+
 ## [2020-02-10] v2.3.0
     - Support for custom attribute "x-nullable" (#70)
 
