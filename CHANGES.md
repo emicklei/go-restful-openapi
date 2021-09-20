@@ -2,6 +2,10 @@
 
 # v2+ versions are using the Go module of go-restful v3+
 
+## [2021-09-20] v2.5.0
+
+- add support for format tag (#72, askingcat)
+
 ## [2021-09-18] v2.4.0
 
 - add support for vendor extensions (#)
