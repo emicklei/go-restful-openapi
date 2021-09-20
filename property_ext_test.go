@@ -21,6 +21,7 @@ func TestThatExtraTagsAreReadIntoModel(t *testing.T) {
 		Password  string
 		Optional  bool   `optional:"true"`
 		Created   string `readOnly:"true"`
+		UUID      string `type:"string" format:"UUID"`
 	}
 	d := definitionsFromStruct(Anything{})
 	props, _ := d["restfulspec.Anything"]
@@ -80,6 +81,13 @@ func TestThatExtraTagsAreReadIntoModel(t *testing.T) {
 		t.Errorf("got %v want %v", got, want)
 	}
 	if got, want := props.Description, "a test\nmore description"; got != want {
+		t.Errorf("got %v want %v", got, want)
+	}
+	p10, _ := props.Properties["UUID"]
+	if got, want := p10.Type[0], "string"; got != want {
+		t.Errorf("got %v want %v", got, want)
+	}
+	if got, want := p10.Format, "UUID"; got != want {
 		t.Errorf("got %v want %v", got, want)
 	}
 }

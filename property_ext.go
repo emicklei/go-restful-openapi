@@ -32,6 +32,13 @@ func setEnumValues(prop *spec.Schema, field reflect.StructField) {
 	}
 }
 
+func setFormat(prop *spec.Schema, field reflect.StructField) {
+	if tag := field.Tag.Get("format"); tag != "" {
+		prop.Format = tag
+	}
+
+}
+
 func setMaximum(prop *spec.Schema, field reflect.StructField) {
 	if tag := field.Tag.Get("maximum"); tag != "" {
 		value, err := strconv.ParseFloat(tag, 64)
@@ -96,6 +103,7 @@ func setPropertyMetadata(prop *spec.Schema, field reflect.StructField) {
 	setDescription(prop, field)
 	setDefaultValue(prop, field)
 	setEnumValues(prop, field)
+	setFormat(prop, field)
 	setMinimum(prop, field)
 	setMaximum(prop, field)
 	setUniqueItems(prop, field)
