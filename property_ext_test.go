@@ -24,6 +24,7 @@ func TestThatExtraTagsAreReadIntoModel(t *testing.T) {
 		Created          string `readOnly:"true"`
 		NullableField    string `x-nullable:"true"`
 		NotNullableField string `x-nullable:"false"`
+		UUID             string `type:"string" format:"UUID"`
 	}
 	d := definitionsFromStruct(Anything{})
 	props, _ := d["restfulspec.Anything"]
@@ -91,6 +92,13 @@ func TestThatExtraTagsAreReadIntoModel(t *testing.T) {
 	}
 	p11, _ := props.Properties["NotNullableField"]
 	if got, want := p11.Extensions["x-nullable"], false; got != want {
+		t.Errorf("got %v want %v", got, want)
+	}
+	p12, _ := props.Properties["UUID"]
+	if got, want := p12.Type[0], "string"; got != want {
+		t.Errorf("got %v want %v", got, want)
+	}
+	if got, want := p12.Format, "UUID"; got != want {
 		t.Errorf("got %v want %v", got, want)
 	}
 }
