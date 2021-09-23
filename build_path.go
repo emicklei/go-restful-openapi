@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"reflect"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -18,6 +19,9 @@ const (
 
 	// ExtensionPrefix is the only prefix accepted for VendorExtensible extension keys
 	ExtensionPrefix = "x-"
+
+	arrayType = "array"
+	definitionRoot = "#/definitions/"
 )
 
 func buildPaths(ws *restful.WebService, cfg Config) spec.Paths {
@@ -60,19 +64,19 @@ func sanitizePath(restfulPath string) (string, map[string]string) {
 func buildPathItem(ws *restful.WebService, r restful.Route, existingPathItem spec.PathItem, patterns map[string]string, cfg Config) spec.PathItem {
 	op := buildOperation(ws, r, patterns, cfg)
 	switch r.Method {
-	case "GET":
+	case http.MethodGet:
 		existingPathItem.Get = op
-	case "POST":
+	case http.MethodPost:
 		existingPathItem.Post = op
-	case "PUT":
+	case http.MethodPut:
 		existingPathItem.Put = op
-	case "DELETE":
+	case http.MethodDelete:
 		existingPathItem.Delete = op
-	case "PATCH":
+	case http.MethodPatch:
 		existingPathItem.Patch = op
-	case "OPTIONS":
+	case http.MethodOptions:
 		existingPathItem.Options = op
-	case "HEAD":
+	case http.MethodHead:
 		existingPathItem.Head = op
 	}
 	return existingPathItem
@@ -151,19 +155,54 @@ func buildParameter(r restful.Route, restfulParam *restful.Parameter, pattern st
 	p := spec.Parameter{}
 	param := restfulParam.Data()
 	p.In = asParamType(param.Kind)
-	p.Description = param.Description
-	p.Name = param.Name
-	p.Required = param.Required
 
-	if len(param.AllowableValues) > 0 {
-		p.Enum = make([]interface{}, 0, len(param.AllowableValues))
-		for key := range param.AllowableValues {
-			p.Enum = append(p.Enum, key)
+	if param.AllowMultiple {
+		// If the param is an array apply the validations to the items in it
+		p.Type = arrayType
+		p.Items = spec.NewItems()
+		p.Items.Type = param.DataType
+		p.Items.Pattern = param.Pattern
+		p.Items.MinLength = param.MinLength
+		p.Items.MaxLength = param.MaxLength
+		p.CollectionFormat = param.CollectionFormat
+		p.MinItems = param.MinItems
+		p.MaxItems = param.MaxItems
+		p.UniqueItems = param.UniqueItems
+	} else {
+		// Otherwise for non-arrays apply the validations directly to the param
+		p.Type = param.DataType
+		p.MinLength = param.MinLength
+		p.MaxLength = param.MaxLength
+		p.Minimum = param.Minimum
+		p.Maximum = param.Maximum
+	}
+
+	if numAllowable := len(param.AllowableValues); numAllowable > 0 {
+		// If allowable values are defined, set the enum array to the sorted values
+		allowableSortedKeys := make([]string, 0, numAllowable)
+		for k := range param.AllowableValues {
+			allowableSortedKeys = append(allowableSortedKeys, k)
+		}
+
+		// sort away
+		sort.Strings(allowableSortedKeys)
+
+		// init Enum to our known size and populate it
+		p.Enum = make([]interface{}, 0, numAllowable)
+		for _, key := range allowableSortedKeys {
+			p.Enum = append(p.Enum, param.AllowableValues[key])
 		}
 	}
 
+	p.Description = param.Description
+	p.Name = param.Name
+	p.Required = param.Required
+	p.AllowEmptyValue = param.AllowEmptyValue
+
 	if param.Kind == restful.PathParameterKind {
 		p.Pattern = pattern
+	} else if !param.AllowMultiple {
+		p.Pattern = param.Pattern
 	}
 	st := reflect.TypeOf(r.ReadSample)
 	if param.Kind == restful.BodyParameterKind && r.ReadSample != nil && param.DataType == st.String() {
@@ -171,7 +210,7 @@ func buildParameter(r restful.Route, restfulParam *restful.Parameter, pattern st
 		p.SimpleSchema = spec.SimpleSchema{}
 		if st.Kind() == reflect.Array || st.Kind() == reflect.Slice {
 			dataTypeName := keyFrom(st.Elem(), cfg)
-			p.Schema.Type = []string{"array"}
+			p.Schema.Type = []string{arrayType}
 			p.Schema.Items = &spec.SchemaOrArray{
 				Schema: &spec.Schema{},
 			}
@@ -180,16 +219,16 @@ func buildParameter(r restful.Route, restfulParam *restful.Parameter, pattern st
 				mapped := jsonSchemaType(dataTypeName)
 				p.Schema.Items.Schema.Type = []string{mapped}
 			} else {
-				p.Schema.Items.Schema.Ref = spec.MustCreateRef("#/definitions/" + dataTypeName)
+				p.Schema.Items.Schema.Ref = spec.MustCreateRef(definitionRoot + dataTypeName)
 			}
 		} else {
 			dataTypeName := keyFrom(st, cfg)
-			p.Schema.Ref = spec.MustCreateRef("#/definitions/" + dataTypeName)
+			p.Schema.Ref = spec.MustCreateRef(definitionRoot + dataTypeName)
 		}
 
 	} else {
 		if param.AllowMultiple {
-			p.Type = "array"
+			p.Type = arrayType
 			p.Items = spec.NewItems()
 			p.Items.Type = param.DataType
 			p.CollectionFormat = param.CollectionFormat
@@ -217,7 +256,7 @@ func buildResponse(e restful.ResponseError, cfg Config) (r spec.Response) {
 		r.Schema = new(spec.Schema)
 		if st.Kind() == reflect.Array || st.Kind() == reflect.Slice {
 			modelName := keyFrom(st.Elem(), cfg)
-			r.Schema.Type = []string{"array"}
+			r.Schema.Type = []string{arrayType}
 			r.Schema.Items = &spec.SchemaOrArray{
 				Schema: &spec.Schema{},
 			}
@@ -226,7 +265,7 @@ func buildResponse(e restful.ResponseError, cfg Config) (r spec.Response) {
 				mapped := jsonSchemaType(modelName)
 				r.Schema.Items.Schema.Type = []string{mapped}
 			} else {
-				r.Schema.Items.Schema.Ref = spec.MustCreateRef("#/definitions/" + modelName)
+				r.Schema.Items.Schema.Ref = spec.MustCreateRef(definitionRoot + modelName)
 			}
 		} else {
 			modelName := keyFrom(st, cfg)
@@ -236,12 +275,48 @@ func buildResponse(e restful.ResponseError, cfg Config) (r spec.Response) {
 				r.Schema.AddType(modelName, "")
 			} else {
 				modelName := keyFrom(st, cfg)
-				r.Schema.Ref = spec.MustCreateRef("#/definitions/" + modelName)
+				r.Schema.Ref = spec.MustCreateRef(definitionRoot + modelName)
 			}
 		}
 	}
+
+	if len(e.Headers) > 0 {
+		r.Headers = make(map[string]spec.Header, len(e.Headers))
+		for k, v := range e.Headers {
+			r.Headers[k] = buildHeader(v)
+		}
+	}
+
 	extractVendorExtensions(&r.VendorExtensible, e.ExtensionProperties)
 	return r
+}
+
+// buildHeader builds a specification header structure from restful.Header
+func buildHeader(header restful.Header) spec.Header {
+	responseHeader := spec.Header{}
+	responseHeader.Type = header.Type
+	responseHeader.Description = header.Description
+
+	// If type is "array" items field is required
+	if header.Type == arrayType {
+		responseHeader.Items = buildHeadersItems(header.Items)
+	}
+
+	return responseHeader
+}
+
+// buildHeadersItems builds
+func buildHeadersItems(items *restful.Items) *spec.Items {
+	responseItems := spec.NewItems()
+	responseItems.Format = items.Format
+	responseItems.Type = items.Type
+	responseItems.Default = items.Default
+	responseItems.CollectionFormat = items.CollectionFormat
+	if items.Items != nil {
+		responseItems.Items = buildHeadersItems(items.Items)
+	}
+
+	return responseItems
 }
 
 // stripTags takes a snippet of HTML and returns only the text content.
