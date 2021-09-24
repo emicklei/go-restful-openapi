@@ -2,6 +2,10 @@
 
 # v2+ versions are using the Go module of go-restful v3+
 
+## [2021-09-20] v2.6.0
+
+- feat(parameter): adds additional openapi mappings (#74, robbie@robnrob.com)
+
 ## [2021-09-20] v2.5.0
 
 - add support for format tag (#72, askingcat)
