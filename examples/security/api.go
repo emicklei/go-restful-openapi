@@ -35,10 +35,10 @@ func enrichSwaggerObject(swo *spec.Swagger) {
 	}
 
 	// map routes to security definitions
-	enrichSwaggeerObjectSecurity(swo)
+	enrichSwaggerObjectSecurity(swo)
 }
 
-func enrichSwaggeerObjectSecurity(swo *spec.Swagger) {
+func enrichSwaggerObjectSecurity(swo *spec.Swagger) {
 
 	// loop through all registerd web services
 	for _, ws := range restful.RegisteredWebServices() {
