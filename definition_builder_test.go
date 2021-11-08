@@ -431,3 +431,17 @@ func TestRecursiveFieldStructure(t *testing.T) {
 	db.addModelFrom(Foo{})
 	t.Log(db)
 }
+
+type email struct {
+	ID          string   `json:"id"`
+	Attachments [][]byte `json:"attachments,omitempty" optional:"true"`
+}
+
+// Definition Builder fails with [][]byte #77
+func TestDoubleByteArray(t *testing.T) {
+	db := definitionBuilder{Definitions: spec.Definitions{}, Config: Config{}}
+	db.addModelFrom(email{})
+	for k, v := range db.Definitions {
+		t.Logf("%s:%T\n", k, v)
+	}
+}
