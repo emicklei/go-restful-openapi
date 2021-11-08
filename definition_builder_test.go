@@ -2,6 +2,7 @@ package restfulspec
 
 import (
 	"encoding/json"
+	"os"
 	"testing"
 
 	"github.com/go-openapi/spec"
@@ -441,7 +442,10 @@ type email struct {
 func TestDoubleByteArray(t *testing.T) {
 	db := definitionBuilder{Definitions: spec.Definitions{}, Config: Config{}}
 	db.addModelFrom(email{})
-	for k, v := range db.Definitions {
-		t.Logf("%s:%T\n", k, v)
+	sc, ok := db.Definitions["restfulspec.email.attachments"]
+	if !ok {
+		t.Fail()
 	}
+	t.Log(sc)
+	json.NewEncoder(os.Stdout).Encode(sc)
 }

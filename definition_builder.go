@@ -47,9 +47,11 @@ func (b definitionBuilder) addModel(st reflect.Type, nameOverride string) *spec.
 	if nameOverride != "" {
 		modelName = nameOverride
 	}
-	// no models needed for primitive types
+	// no models needed for primitive types unless it has alias
 	if b.isPrimitiveType(modelName, st.Kind()) {
-		return nil
+		if nameOverride == "" {
+			return nil
+		}
 	}
 	// golang encoding/json packages says array and slice values encode as
 	// JSON arrays, except that []byte encodes as a base64-encoded string.
