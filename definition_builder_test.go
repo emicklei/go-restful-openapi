@@ -2,7 +2,6 @@ package restfulspec
 
 import (
 	"encoding/json"
-	"os"
 	"testing"
 
 	"github.com/go-openapi/spec"
@@ -434,7 +433,6 @@ func TestRecursiveFieldStructure(t *testing.T) {
 }
 
 type email struct {
-	ID          string   `json:"id"`
 	Attachments [][]byte `json:"attachments,omitempty" optional:"true"`
 }
 
@@ -447,5 +445,7 @@ func TestDoubleByteArray(t *testing.T) {
 		t.Fail()
 	}
 	t.Log(sc)
-	json.NewEncoder(os.Stdout).Encode(sc)
+	if got, want := sc.Type[0], "array"; got != want {
+		t.Errorf("got [%v:%T] want [%v:%T]", got, got, want, want)
+	}
 }
