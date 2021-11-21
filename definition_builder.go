@@ -36,10 +36,12 @@ func (b definitionBuilder) addModelFrom(sample interface{}) {
 func (b definitionBuilder) addModel(st reflect.Type, nameOverride string) *spec.Schema {
 	// Turn pointers into simpler types so further checks are
 	// correct.
+	isArray := false
 	if st.Kind() == reflect.Ptr {
 		st = st.Elem()
 	}
 	if b.isSliceOrArrayType(st.Kind()) {
+		isArray = true
 		st = st.Elem()
 	}
 
@@ -47,9 +49,11 @@ func (b definitionBuilder) addModel(st reflect.Type, nameOverride string) *spec.
 	if nameOverride != "" {
 		modelName = nameOverride
 	}
-	// no models needed for primitive types
+	// no models needed for primitive types unless it has alias
 	if b.isPrimitiveType(modelName, st.Kind()) {
-		return nil
+		if nameOverride == "" {
+			return nil
+		}
 	}
 	// golang encoding/json packages says array and slice values encode as
 	// JSON arrays, except that []byte encodes as a base64-encoded string.
@@ -67,6 +71,15 @@ func (b definitionBuilder) addModel(st reflect.Type, nameOverride string) *spec.
 			Required:   []string{},
 			Properties: map[string]spec.Schema{},
 		},
+	}
+
+	// fixes issue 77 but feels like a workaround.
+	if b.isPrimitiveType(modelName, st.Kind()) {
+		if isArray {
+			sm.Type = []string{"array"}
+			sm.Items = &spec.SchemaOrArray{Schema: &spec.Schema{
+				SchemaProps: spec.SchemaProps{Type: []string{jsonSchemaType(st.Kind().String())}}}}
+		}
 	}
 
 	// reference the model before further initializing (enables recursive structs)

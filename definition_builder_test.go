@@ -431,3 +431,41 @@ func TestRecursiveFieldStructure(t *testing.T) {
 	db.addModelFrom(Foo{})
 	t.Log(db)
 }
+
+type email struct {
+	Attachments [][]byte `json:"attachments,omitempty" optional:"true"`
+}
+
+// Definition Builder fails with [][]byte #77
+func TestDoubleByteArray(t *testing.T) {
+	db := definitionBuilder{Definitions: spec.Definitions{}, Config: Config{}}
+	db.addModelFrom(email{})
+	sc, ok := db.Definitions["restfulspec.email.attachments"]
+	if !ok {
+		t.Fail()
+	}
+	t.Log(sc)
+	if got, want := sc.Type[0], "array"; got != want {
+		t.Errorf("got [%v:%T] want [%v:%T]", got, got, want, want)
+	}
+}
+
+type matrix struct {
+	Cells [][]string
+}
+
+func TestDoubleStringArray(t *testing.T) {
+	db := definitionBuilder{Definitions: spec.Definitions{}, Config: Config{}}
+	db.addModelFrom(matrix{})
+	sc, ok := db.Definitions["restfulspec.matrix.Cells"]
+	if !ok {
+		t.Log(db.Definitions)
+		t.Fail()
+	}
+	t.Log(sc)
+	if got, want := sc.Type[0], "array"; got != want {
+		t.Errorf("got [%v:%T] want [%v:%T]", got, got, want, want)
+	}
+	tp := sc.Items.Schema.Type
+	t.Log(tp)
+}
