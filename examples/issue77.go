@@ -167,7 +167,8 @@ type ItemTest struct {
 	StrVal           *string               `protobuf:"bytes,4,opt,name=strVal" json:"strVal,omitempty"`
 	MapVal           map[string]*ItemValue `protobuf:"bytes,5,rep,name=mapVal" json:"mapVal,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	ListVal          []*ItemValue          `protobuf:"bytes,6,rep,name=listVal" json:"listVal,omitempty"`
-	XXX_unrecognized []byte                `json:"-"`
+	Cells            [][]string
+	XXX_unrecognized []byte `json:"-"`
 }
 
 type ItemValue struct {

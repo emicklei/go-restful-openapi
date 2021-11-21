@@ -449,3 +449,23 @@ func TestDoubleByteArray(t *testing.T) {
 		t.Errorf("got [%v:%T] want [%v:%T]", got, got, want, want)
 	}
 }
+
+type matrix struct {
+	Cells [][]string
+}
+
+func TestDoubleStringArray(t *testing.T) {
+	db := definitionBuilder{Definitions: spec.Definitions{}, Config: Config{}}
+	db.addModelFrom(matrix{})
+	sc, ok := db.Definitions["restfulspec.matrix.Cells"]
+	if !ok {
+		t.Log(db.Definitions)
+		t.Fail()
+	}
+	t.Log(sc)
+	if got, want := sc.Type[0], "array"; got != want {
+		t.Errorf("got [%v:%T] want [%v:%T]", got, got, want, want)
+	}
+	tp := sc.Items.Schema.Type
+	t.Log(tp)
+}
