@@ -539,8 +539,8 @@ func (b definitionBuilder) jsonSchemaFormat(modelName string, modelKind reflect.
 	schemaMap := map[string]string{
 		"time.Time":      "date-time",
 		"*time.Time":     "date-time",
-		"time.Duration":  "integer",
-		"*time.Duration": "integer",
+		"time.Duration":  "int64",
+		"*time.Duration": "int64",
 		"json.Number":    "double",
 		"*json.Number":   "double",
 	}
