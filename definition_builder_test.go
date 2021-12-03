@@ -469,3 +469,49 @@ func TestDoubleStringArray(t *testing.T) {
 	tp := sc.Items.Schema.Type
 	t.Log(tp)
 }
+
+type childPostBuildSwaggerSchema struct {
+	Value string
+}
+
+func (m childPostBuildSwaggerSchema) PostBuildSwaggerSchemaHandler(sm *spec.Schema) {
+	sm.Description = "child's description"
+}
+
+type parentPostBuildSwaggerSchema struct {
+	Node childPostBuildSwaggerSchema
+}
+
+func (m parentPostBuildSwaggerSchema) PostBuildSwaggerSchemaHandler(sm *spec.Schema) {
+	sm.Description = "parent's description"
+}
+
+func TestPostBuildSwaggerSchema(t *testing.T) {
+	var obj interface{} = parentPostBuildSwaggerSchema{}
+	if _, ok := obj.(PostBuildSwaggerSchema); !ok {
+		t.Fatalf("object does not implement PostBuildSwaggerSchema interface")
+	}
+	db := definitionBuilder{Definitions: spec.Definitions{}, Config: Config{}}
+	db.addModelFrom(obj)
+	sc, ok := db.Definitions["restfulspec.parentPostBuildSwaggerSchema"]
+	if !ok {
+		t.Logf("definitions: %#v", db.Definitions)
+		t.Fail()
+	}
+	t.Logf("sc: %#v", sc)
+	if got, want := sc.Description, "parent's description"; got != want {
+		t.Errorf("got [%v:%T] want [%v:%T]", got, got, want, want)
+	}
+	t.Log(sc.Description)
+
+	sc, ok = db.Definitions["restfulspec.childPostBuildSwaggerSchema"]
+	if !ok {
+		t.Logf("definitions: %#v", db.Definitions)
+		t.Fail()
+	}
+	t.Logf("sc: %#v", sc)
+	if got, want := sc.Description, "child's description"; got != want {
+		t.Errorf("got [%v:%T] want [%v:%T]", got, got, want, want)
+	}
+	t.Log(sc.Description)
+}

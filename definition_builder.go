@@ -18,6 +18,10 @@ type Documented interface {
 	SwaggerDoc() map[string]string
 }
 
+type PostBuildSwaggerSchema interface {
+	PostBuildSwaggerSchemaHandler(sm *spec.Schema)
+}
+
 // Check if this structure has a method with signature func (<theModel>) SwaggerDoc() map[string]string
 // If it exists, retrieve the documentation and overwrite all struct tag descriptions
 func getDocFromMethodSwaggerDoc2(model reflect.Type) map[string]string {
@@ -130,6 +134,11 @@ func (b definitionBuilder) addModel(st reflect.Type, nameOverride string) *spec.
 	// but it conflicts with the openapi specification.
 	// See https://github.com/go-openapi/spec/issues/23 for more context
 	sm.ID = ""
+
+	// Call handler to update sch
+	if handler, ok := reflect.New(st).Elem().Interface().(PostBuildSwaggerSchema); ok {
+		handler.PostBuildSwaggerSchemaHandler(&sm)
+	}
 
 	// update model builder with completed model
 	b.Definitions[modelName] = sm
