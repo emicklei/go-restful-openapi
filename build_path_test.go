@@ -225,7 +225,7 @@ func TestReadArrayObjectInBody(t *testing.T) {
 	if _, exists := postInfo.Responses.StatusCodeResponses[500]; !exists {
 		t.Errorf("Response code 500 not added to spec.")
 	}
-	// indentify  element model type in body array
+	// identify element model type in body array
 	expectedItemRef := spec.MustCreateRef("#/definitions/restfulspec.Sample")
 	postBody := postInfo.Parameters[0]
 	if postBody.Schema.Ref.String() != "" {

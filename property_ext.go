@@ -34,7 +34,7 @@ func setIsNullableValue(prop *spec.Schema, field reflect.StructField) {
 
 func setEnumValues(prop *spec.Schema, field reflect.StructField) {
 	// We use | to separate the enum values.  This value is chosen
-	// since its unlikely to be useful in actual enumeration values.
+	// since it's unlikely to be useful in actual enumeration values.
 	if tag := field.Tag.Get("enum"); tag != "" {
 		enums := []interface{}{}
 		for _, s := range strings.Split(tag, "|") {
@@ -75,7 +75,7 @@ func setType(prop *spec.Schema, field reflect.StructField) {
 		// intended to emulate slice/array behaviour.
 		//
 		// If type is intended to be a slice/array then add the
-		// overriden type to the array item instead of the main property
+		// overridden type to the array item instead of the main property
 		if len(tag) > 2 && tag[0:2] == "[]" {
 			pType := "array"
 			prop.Type = []string{pType}

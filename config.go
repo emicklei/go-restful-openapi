@@ -3,7 +3,7 @@ package restfulspec
 import (
 	"reflect"
 
-	restful "github.com/emicklei/go-restful/v3"
+	"github.com/emicklei/go-restful/v3"
 	"github.com/go-openapi/spec"
 )
 
@@ -26,7 +26,7 @@ type Config struct {
 	Host string
 	// WebServicesURL is a DEPRECATED field; it never had any effect in this package.
 	WebServicesURL string
-	// APIPath is the path where the JSON api is avaiable , e.g. /apidocs.json
+	// APIPath is the path where the JSON api is available, e.g. /apidocs.json
 	APIPath string
 	// api listing is constructed from this list of restful WebServices.
 	WebServices []*restful.WebService
