@@ -38,8 +38,8 @@ func buildPaths(ws *restful.WebService, cfg Config) spec.Paths {
 }
 
 // sanitizePath removes regex expressions from named path params,
-// since openapi only supports setting the pattern as a a property named "pattern".
-// Expressions like "/api/v1/{name:[a-z]/" are converted to "/api/v1/{name}/".
+// since openapi only supports setting the pattern as a property named "pattern".
+// Expressions like "/api/v1/{name:[a-z]}/" are converted to "/api/v1/{name}/".
 // The second return value is a map which contains the mapping from the path parameter
 // name to the extracted pattern
 func sanitizePath(restfulPath string) (string, map[string]string) {
@@ -169,7 +169,7 @@ func buildParameter(r restful.Route, restfulParam *restful.Parameter, pattern st
 		p.MaxItems = param.MaxItems
 		p.UniqueItems = param.UniqueItems
 	} else {
-		// Otherwise for non-arrays apply the validations directly to the param
+		// Otherwise, for non-arrays, apply the validations directly to the param
 		p.Type = param.DataType
 		p.MinLength = param.MinLength
 		p.MaxLength = param.MaxLength

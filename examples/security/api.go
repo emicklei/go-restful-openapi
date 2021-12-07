@@ -4,7 +4,7 @@ import (
 	"log"
 	"strings"
 
-	restful "github.com/emicklei/go-restful/v3"
+	"github.com/emicklei/go-restful/v3"
 	"github.com/go-openapi/spec"
 )
 
@@ -40,7 +40,7 @@ func enrichSwaggerObject(swo *spec.Swagger) {
 
 func enrichSwaggerObjectSecurity(swo *spec.Swagger) {
 
-	// loop through all registerd web services
+	// loop through all registered web services
 	for _, ws := range restful.RegisteredWebServices() {
 		for _, route := range ws.Routes() {
 
