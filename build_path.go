@@ -20,7 +20,7 @@ const (
 	// ExtensionPrefix is the only prefix accepted for VendorExtensible extension keys
 	ExtensionPrefix = "x-"
 
-	arrayType = "array"
+	arrayType      = "array"
 	definitionRoot = "#/definitions/"
 )
 
@@ -177,20 +177,29 @@ func buildParameter(r restful.Route, restfulParam *restful.Parameter, pattern st
 		p.Maximum = param.Maximum
 	}
 
-	if numAllowable := len(param.AllowableValues); numAllowable > 0 {
-		// If allowable values are defined, set the enum array to the sorted values
-		allowableSortedKeys := make([]string, 0, numAllowable)
-		for k := range param.AllowableValues {
-			allowableSortedKeys = append(allowableSortedKeys, k)
-		}
-
-		// sort away
-		sort.Strings(allowableSortedKeys)
-
+	// Prefer PossibleValues over deprecated AllowableValues
+	if numPossible := len(param.PossibleValues); numPossible > 0 {
 		// init Enum to our known size and populate it
-		p.Enum = make([]interface{}, 0, numAllowable)
-		for _, key := range allowableSortedKeys {
-			p.Enum = append(p.Enum, param.AllowableValues[key])
+		p.Enum = make([]interface{}, 0, numPossible)
+		for _, value := range param.PossibleValues {
+			p.Enum = append(p.Enum, value)
+		}
+	} else {
+		if numAllowable := len(param.AllowableValues); numAllowable > 0 {
+			// If allowable values are defined, set the enum array to the sorted values
+			allowableSortedKeys := make([]string, 0, numAllowable)
+			for k := range param.AllowableValues {
+				allowableSortedKeys = append(allowableSortedKeys, k)
+			}
+
+			// sort away
+			sort.Strings(allowableSortedKeys)
+
+			// init Enum to our known size and populate it
+			p.Enum = make([]interface{}, 0, numAllowable)
+			for _, key := range allowableSortedKeys {
+				p.Enum = append(p.Enum, param.AllowableValues[key])
+			}
 		}
 	}
 
