@@ -8,4 +8,4 @@ require (
 	github.com/go-openapi/spec v0.20.4
 )
 
-// eplace github.com/emicklei/go-restful-openapi/v2 => ../
+// replace github.com/emicklei/go-restful-openapi/v2 => ../
