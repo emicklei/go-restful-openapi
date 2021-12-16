@@ -40,4 +40,7 @@ type Config struct {
 	ModelTypeNameHandler MapModelTypeNameFunc
 	// [optional] If set then call this function with the generated Swagger Object
 	PostBuildSwaggerObjectHandler PostBuildSwaggerObjectFunc
+	// [optional] If set then call handler's function for to generate name by this handler for definition without json tag,
+	//   you can use you DefinitionNameHandler, also, there are four DefinitionNameHandler provided, see definition_name.go
+	DefinitionNameHandler DefinitionNameHandler
 }
