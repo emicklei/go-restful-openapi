@@ -17,9 +17,8 @@ func TestGoLowerCamelCasedNameHandler_DefaultDefinitionName(t *testing.T) {
 		{"go HTTP with Started name case","HTTPStatus","httpStatus"},
 	}
 
-	handler := new(GoLowerCamelCasedNameHandler)
 	for _, testCase := range testCases {
-		output := handler.GetDefinitionName(testCase.input)
+		output := GoLowerCamelCasedNameHandler(testCase.input)
 		if output !=  testCase.excepted {
 			t.Errorf("testing %s failed, expected %s, get %s",testCase.name, testCase.excepted, output)
 		}
@@ -39,9 +38,8 @@ func TestLowerCamelCasedNameHandler_DefaultDefinitionName(t *testing.T) {
 		{"go HTTP with Started name case","HTTPStatus","hTTPStatus"},
 	}
 
-	handler := new(LowerCamelCasedNameHandler)
 	for _, testCase := range testCases {
-		output := handler.GetDefinitionName(testCase.input)
+		output := LowerCamelCasedNameHandler(testCase.input)
 		if output !=  testCase.excepted {
 			t.Errorf("testing %s failed, expected %s, get %s",testCase.name, testCase.excepted, output)
 		}
@@ -61,9 +59,8 @@ func TestDefaultNameHandler_DefaultDefinitionName(t *testing.T) {
 		{"go HTTP with Started name case","HTTPStatus","HTTPStatus"},
 	}
 
-	handler := new(DefaultNameHandler)
 	for _, testCase := range testCases {
-		output := handler.GetDefinitionName(testCase.input)
+		output := DefaultNameHandler(testCase.input)
 		if output !=  testCase.excepted {
 			t.Errorf("testing %s failed, expected %s, get %s",testCase.name, testCase.excepted, output)
 		}
@@ -80,9 +77,8 @@ func TestLowerSnakeCasedNameHandler_DefaultDefinitionName(t *testing.T) {
 		{"go ID case","IDForA","i_d_for_a"},
 	}
 
-	handler := new(LowerSnakeCasedNameHandler)
 	for _, testCase := range testCases {
-		output := handler.GetDefinitionName(testCase.input)
+		output := LowerSnakeCasedNameHandler(testCase.input)
 		if output !=  testCase.excepted {
 			t.Errorf("testing %s failed, expected %s, get %s",testCase.name, testCase.excepted, output)
 		}

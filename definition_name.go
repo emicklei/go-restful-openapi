@@ -2,35 +2,15 @@ package restfulspec
 
 import "strings"
 
-// DefinitionNameHandler generate name by this handler for definition without json tag.
-// example: (for more, see file definition_name_test.go)
-//   field	      			 definition_name
-//   Name `json:"name"`  ->  name
-// 	 Name                ->  Name
-//
-// there are some example provided for use
-//   DefaultNameHandler         GoRestfulDefinition -> GoRestfulDefinition (not changed)
-//   LowerSnakeCasedNameHandler  GoRestfulDefinition -> go_restful_definition
-//   LowerCamelCasedNameHandler  GoRestfulDefinition -> goRestfulDefinition
-//   GoLowerCamelCasedNameHandler HTTPRestfulDefinition -> httpRestfulDefinition
-//
-type DefinitionNameHandler interface {
-	GetDefinitionName(string) string
-}
-
 
 // DefaultNameHandler GoRestfulDefinition -> GoRestfulDefinition (not changed)
-type DefaultNameHandler struct{}
-
-func (_ DefaultNameHandler) GetDefinitionName(name string) string {
+func DefaultNameHandler(name string) string {
 	return name
 }
 
 
 // LowerSnakeCasedNameHandler GoRestfulDefinition -> go_restful_definition
-type LowerSnakeCasedNameHandler struct{}
-
-func (_ LowerSnakeCasedNameHandler) GetDefinitionName(name string) string {
+func LowerSnakeCasedNameHandler(name string) string {
 	definitionName := make([]byte, 0, len(name)+1)
 	for i := 0; i < len(name); i++ {
 		c := name[i]
@@ -48,9 +28,7 @@ func (_ LowerSnakeCasedNameHandler) GetDefinitionName(name string) string {
 
 
 // LowerCamelCasedNameHandler GoRestfulDefinition -> goRestfulDefinition
-type LowerCamelCasedNameHandler struct{}
-
-func (_ LowerCamelCasedNameHandler) GetDefinitionName(name string) string {
+func LowerCamelCasedNameHandler(name string) string {
 	definitionName := make([]byte, 0, len(name)+1)
 	for i := 0; i < len(name); i++ {
 		c := name[i]
@@ -65,9 +43,7 @@ func (_ LowerCamelCasedNameHandler) GetDefinitionName(name string) string {
 
 
 // GoLowerCamelCasedNameHandler HTTPRestfulDefinition -> httpRestfulDefinition
-type GoLowerCamelCasedNameHandler struct{}
-
-func (_ GoLowerCamelCasedNameHandler) GetDefinitionName(name string) string {
+func GoLowerCamelCasedNameHandler(name string) string {
 	var i = 0
 	// for continuous Upper letters, check whether is it a common Initialisms
 	for ; i < len(name) && isUpper(name[i]); i++ {}
