@@ -2,6 +2,17 @@
 
 # v2+ versions are using the Go module of go-restful v3+
 
+## v2.7.0
+
+[2021-12-08]
+
+- fix some typos (#85)
+- use PossibleValues in favor of AllowedValues (#84)
+- PostBuildSwaggerSchema handler for each model (#83)
+- Use int64 format for time.Duration type (#82)
+
+Special thanks to contributions of Sergey Vilgelm <sergey@vilgelm.com>
+
 ## [2021-09-20] v2.6.0
 
 - feat(parameter): adds additional openapi mappings (#74, robbie@robnrob.com)
