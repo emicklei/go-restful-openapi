@@ -507,7 +507,11 @@ func (b definitionBuilder) jsonNameOfField(field reflect.StructField) string {
 			return s[0]
 		}
 	}
-	return field.Name
+
+	if b.Config.DefinitionNameHandler == nil {
+		b.Config.DefinitionNameHandler = DefaultNameHandler
+	}
+	return b.Config.DefinitionNameHandler(field.Name)
 }
 
 // see also http://json-schema.org/latest/json-schema-core.html#anchor8
