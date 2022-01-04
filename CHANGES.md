@@ -2,6 +2,16 @@
 
 # v2+ versions are using the Go module of go-restful v3+
 
+## v2.8.0
+
+[2022-01-04]
+
+- refine and fix GoLowerCamelCasedNameHandler bug (#88)
+- Add missing fields of response header object (#89)
+- support generate field name with config (#86)
+
+Thanks again to slow-zhang and Sergey Vilgelm
+
 ## v2.7.0
 
 [2021-12-08]
