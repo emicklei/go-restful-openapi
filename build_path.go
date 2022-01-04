@@ -305,9 +305,12 @@ func buildHeader(header restful.Header) spec.Header {
 	responseHeader := spec.Header{}
 	responseHeader.Type = header.Type
 	responseHeader.Description = header.Description
+	responseHeader.Format = header.Format
+	responseHeader.Default = header.Default
 
 	// If type is "array" items field is required
 	if header.Type == arrayType {
+		responseHeader.CollectionFormat = header.CollectionFormat
 		responseHeader.Items = buildHeadersItems(header.Items)
 	}
 
