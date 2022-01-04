@@ -2,19 +2,17 @@ package restfulspec
 
 import "strings"
 
-
 // DefaultNameHandler GoRestfulDefinition -> GoRestfulDefinition (not changed)
 func DefaultNameHandler(name string) string {
 	return name
 }
-
 
 // LowerSnakeCasedNameHandler GoRestfulDefinition -> go_restful_definition
 func LowerSnakeCasedNameHandler(name string) string {
 	definitionName := make([]byte, 0, len(name)+1)
 	for i := 0; i < len(name); i++ {
 		c := name[i]
-		if isUpper := 'A' <= c && c <= 'Z'; isUpper {
+		if isUpper(c) {
 			if i > 0 {
 				definitionName = append(definitionName, '_')
 			}
@@ -25,7 +23,6 @@ func LowerSnakeCasedNameHandler(name string) string {
 
 	return string(definitionName)
 }
-
 
 // LowerCamelCasedNameHandler GoRestfulDefinition -> goRestfulDefinition
 func LowerCamelCasedNameHandler(name string) string {
@@ -41,24 +38,23 @@ func LowerCamelCasedNameHandler(name string) string {
 	return string(definitionName)
 }
 
-
 // GoLowerCamelCasedNameHandler HTTPRestfulDefinition -> httpRestfulDefinition
 func GoLowerCamelCasedNameHandler(name string) string {
 	var i = 0
 	// for continuous Upper letters, check whether is it a common Initialisms
-	for ; i < len(name) && isUpper(name[i]); i++ {}
-	if len(name) != i && i != 1 {
+	for ; i < len(name) && isUpper(name[i]); i++ {
+	}
+	if len(name) != i && i > 1 {
 		i-- // for continuous Upper letters, the last Upper is should not be check, eg: S for HTTPStatus
 	}
-	for ;i > 1;i-- {
-		if _, ok := commonInitialisms[name[:i]];ok {
+	for ; i > 1; i-- {
+		if _, ok := commonInitialisms[name[:i]]; ok {
 			break
 		}
 	}
 
-	return strings.ToLower(name[:i])+ name[i:]
+	return strings.ToLower(name[:i]) + name[i:]
 }
-
 
 // commonInitialisms is a set of common initialisms. (from https://github.com/golang/lint/blob/master/lint.go)
 // Only add entries that are highly unlikely to be non-initialisms.
