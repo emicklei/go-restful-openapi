@@ -46,6 +46,7 @@ func BuildSwagger(config Config) *spec.Swagger {
 	swagger := &spec.Swagger{
 		SwaggerProps: spec.SwaggerProps{
 			Host:        config.Host,
+			Schemes:     config.Schemes,
 			Swagger:     "2.0",
 			Paths:       paths,
 			Definitions: definitions,
