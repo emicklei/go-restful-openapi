@@ -2,6 +2,11 @@
 
 # v2+ versions are using the Go module of go-restful v3+
 
+## v2.9.0
+
+    - Add property x-go-name support (#90)
+    - Add support to set swagger Schemes field (#91)
+
 ## v2.8.0
 
 [2022-01-04]
