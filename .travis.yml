@@ -9,5 +9,5 @@ before_install:
 script:
   - go mod vendor
   - go mod download
-  - make lint-ci
+#  - make lint-ci
   - make test
