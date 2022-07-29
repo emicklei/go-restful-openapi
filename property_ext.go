@@ -8,6 +8,12 @@ import (
 	"github.com/go-openapi/spec"
 )
 
+func initPropExtensions(ext *spec.Extensions) {
+	if *ext == nil {
+		*ext = make(spec.Extensions, 0)
+	}
+}
+
 func setDescription(prop *spec.Schema, field reflect.StructField) {
 	if tag := field.Tag.Get("description"); tag != "" {
 		prop.Description = tag
@@ -22,13 +28,19 @@ func setDefaultValue(prop *spec.Schema, field reflect.StructField) {
 
 func setIsNullableValue(prop *spec.Schema, field reflect.StructField) {
 	if tag := field.Tag.Get("x-nullable"); tag != "" {
-		if prop.Extensions == nil {
-			prop.Extensions = make(spec.Extensions, 0)
-		}
+		initPropExtensions(&prop.Extensions)
 
 		value, err := strconv.ParseBool(tag)
 
 		prop.Extensions["x-nullable"] = value && err == nil
+	}
+}
+
+func setGoNameValue(prop *spec.Schema, field reflect.StructField) {
+	const tagName = "x-go-name"
+	if tag := field.Tag.Get(tagName); tag != "" {
+		initPropExtensions(&prop.Extensions)
+		prop.Extensions[tagName] = tag
 	}
 }
 
@@ -122,4 +134,5 @@ func setPropertyMetadata(prop *spec.Schema, field reflect.StructField) {
 	setType(prop, field)
 	setReadOnly(prop, field)
 	setIsNullableValue(prop, field)
+	setGoNameValue(prop, field)
 }
