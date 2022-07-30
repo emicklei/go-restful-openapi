@@ -154,18 +154,22 @@ func enrichSwaggerObject(swo *spec.Swagger) {
 			Title:       "UserService",
 			Description: "Resource for managing Users",
 			Contact: &spec.ContactInfo{
-				Name:  "john",
-				Email: "john@doe.rp",
-				URL:   "http://johndoe.org",
+				ContactInfoProps: spec.ContactInfoProps{
+					Name:  "john",
+					Email: "john@doe.rp",
+					URL:   "http://johndoe.org",
+				},
 			},
 			License: &spec.License{
-				Name: "MIT",
-				URL:  "http://mit.org",
+				LicenseProps: spec.LicenseProps{
+					Name: "MIT",
+					URL:  "http://mit.org",
+				},
 			},
 			Version: "1.0.0",
 		},
 	}
-	swo.Tags = []spec.Tag{spec.Tag{TagProps: spec.TagProps{
+	swo.Tags = []spec.Tag{{TagProps: spec.TagProps{
 		Name:        "users",
 		Description: "Managing users"}}}
 }
