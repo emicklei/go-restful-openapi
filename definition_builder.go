@@ -323,6 +323,7 @@ func (b definitionBuilder) buildArrayTypeProperty(field reflect.StructField, jso
 	if isPrimitive {
 		mapped := b.jsonSchemaType(elemTypeName, fieldType.Elem().Kind())
 		prop.Items.Schema.Type = []string{mapped}
+		prop.Items.Schema.Format = b.jsonSchemaFormat(elemTypeName, fieldType.Elem().Kind())
 	} else {
 		prop.Items.Schema.Ref = spec.MustCreateRef("#/definitions/" + elemTypeName)
 	}
