@@ -102,6 +102,56 @@ func checkPattern(t *testing.T, path spec.PathItem, paramName string, pattern st
 	}
 }
 
+func TestGoogleCustomMethods(t *testing.T) {
+	ws := new(restful.WebService)
+	ws.Path("/tests").Consumes(restful.MIME_JSON).Produces(restful.MIME_XML)
+	ws.Route(ws.GET("/resource:validate").To(dummy).
+		Doc("validate resource").
+		Returns(200, "validate resource successfully", []Sample{}).
+		Writes([]Sample{}))
+	ws.Route(ws.POST("/resource/{resourceId}:init").To(dummy).
+		Doc("init the specified resource").
+		Returns(200, "init the specified resource successfully", []Sample{}).
+		Returns(500, "internal server error", []Sample{}).
+		Reads(Sample{}).
+		Writes([]Sample{}))
+
+	p := buildPaths(ws, Config{})
+	t.Log(asJSON(p))
+
+	path, exists := p.Paths["/tests/resource:validate"]
+	if !exists {
+		t.Error("Expected path to exist after it was sanitized.")
+	}
+	if path.Get.Summary != "validate resource" {
+		t.Errorf("GET description incorrect")
+	}
+	response := path.Get.Responses.StatusCodeResponses[200]
+	if response.Schema.Type[0] != "array" {
+		t.Errorf("response type incorrect")
+	}
+	if response.Schema.Items.Schema.Ref.String() != "#/definitions/restfulspec.Sample" {
+		t.Errorf("response element type incorrect")
+	}
+	path, exists = p.Paths["/tests/resource/{resourceId}:init"]
+	if !exists {
+		t.Error("Expected path to exist after it was sanitized.")
+	}
+	if path.Post.Summary != "init the specified resource" {
+		t.Errorf("POST description incorrect")
+	}
+	if _, exists := p.Paths["/tests/resource/{resourceId}:init"].Post.Responses.StatusCodeResponses[500]; !exists {
+		t.Errorf("Response code 500 not added to spec.")
+	}
+	response = path.Post.Responses.StatusCodeResponses[200]
+	if response.Schema.Type[0] != "array" {
+		t.Errorf("response type incorrect")
+	}
+	if response.Schema.Items.Schema.Ref.String() != "#/definitions/restfulspec.Sample" {
+		t.Errorf("response element type incorrect")
+	}
+}
+
 func TestRouteToPathForAllowableValues(t *testing.T) {
 	description := "get the <strong>a</strong> <em>b</em> test\nthis is the test description"
 	notes := "notes\nblah blah"
