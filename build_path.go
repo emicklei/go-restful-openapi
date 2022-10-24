@@ -51,10 +51,13 @@ func sanitizePath(restfulPath string) (string, map[string]string) {
 		}
 		if strings.HasPrefix(fragment, "{") && strings.Contains(fragment, ":") {
 			split := strings.Split(fragment, ":")
-			fragment = split[0][1:]
-			pattern := split[1][:len(split[1])-1]
-			patterns[fragment] = pattern
-			fragment = "{" + fragment + "}"
+			// skip google custom method like `resource/{resource-id}:customVerb`
+			if !strings.Contains(split[0], "}") {
+				fragment = split[0][1:]
+				pattern := split[1][:len(split[1])-1]
+				patterns[fragment] = pattern
+				fragment = "{" + fragment + "}"
+			}
 		}
 		openapiPath += "/" + fragment
 	}
