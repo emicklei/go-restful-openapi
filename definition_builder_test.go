@@ -432,6 +432,91 @@ func TestRecursiveFieldStructure(t *testing.T) {
 	t.Log(db)
 }
 
+type Baz struct {
+	Foo    `json:"foo"`
+	person struct {
+		name string `json:"name"`
+		age  uint32 `json:"age"`
+	} `json:"person"`
+}
+
+func TestAnonymousStructure(t *testing.T) {
+	db := definitionBuilder{Definitions: spec.Definitions{}, Config: Config{}}
+	db.addModelFrom(Baz{})
+	schema, schemaFound := db.Definitions[".restfulspec.Baz.person"]
+	if !schemaFound {
+		t.Errorf("could not find schema")
+	} else {
+		if got, want := len(schema.Required), 2; got != want {
+			t.Errorf("got %v want %v", got, want)
+		} else {
+			if got, want := schema.Required[0], "name"; got != want {
+				t.Errorf("got %v want %v", got, want)
+			}
+			if got, want := schema.Required[1], "age"; got != want {
+				t.Errorf("got %v want %v", got, want)
+			}
+		}
+		if got, want := len(schema.Properties), 2; got != want {
+			t.Errorf("got %v want %v", got, want)
+		} else {
+			if property, found := schema.Properties["name"]; !found {
+				t.Errorf("could not find property")
+			} else {
+				if property.AdditionalProperties != nil {
+					t.Errorf("unexpected additional properties")
+				}
+			}
+			if property, found := schema.Properties["age"]; !found {
+				t.Errorf("could not find property")
+			} else {
+				if property.AdditionalProperties != nil {
+					t.Errorf("unexpected additional properties")
+				}
+			}
+		}
+	}
+	schema, schemaFound = db.Definitions["restfulspec.Baz"]
+	if !schemaFound {
+		t.Errorf("could not find schema")
+	} else {
+		if got, want := len(schema.Required), 2; got != want {
+			t.Errorf("got %v want %v", got, want)
+		} else {
+			if got, want := schema.Required[0], "foo"; got != want {
+				t.Errorf("got %v want %v", got, want)
+			}
+			if got, want := schema.Required[1], "restfulspec.Baz.person"; got != want {
+				t.Errorf("got %v want %v", got, want)
+			}
+		}
+		if got, want := len(schema.Properties), 2; got != want {
+			t.Errorf("got %v want %v", got, want)
+		} else {
+			if property, found := schema.Properties["foo"]; !found {
+				t.Errorf("could not find property")
+			} else {
+				if property.AdditionalProperties != nil {
+					t.Errorf("unexpected additional properties")
+				}
+				if got, want := property.Ref.String(), "#/definitions/restfulspec.Foo"; got != want {
+					t.Errorf("got %v want %v", got, want)
+				}
+			}
+			if property, found := schema.Properties["restfulspec.Baz.person"]; !found {
+				t.Errorf("could not find property")
+			} else {
+				if property.AdditionalProperties != nil {
+					t.Errorf("unexpected additional properties")
+				}
+				if got, want := property.Ref.String(), "#/definitions/.restfulspec.Baz.person"; got != want {
+					t.Errorf("got %v want %v", got, want)
+				}
+			}
+		}
+	}
+}
+
 type email struct {
 	Attachments [][]byte `json:"attachments,omitempty" optional:"true"`
 }

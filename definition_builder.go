@@ -208,6 +208,10 @@ func (b definitionBuilder) buildProperty(field reflect.StructField, model *spec.
 	fieldKind := fieldType.Kind()
 	switch {
 	case fieldKind == reflect.Struct:
+		// handle anonymous struct
+		if fieldType.Name() == "" {
+			jsonName = modelName + "." + jsonName
+		}
 		jsonName, prop := b.buildStructTypeProperty(field, jsonName, model)
 		return jsonName, modelDescription, prop
 	case b.isSliceOrArrayType(fieldKind):
@@ -259,7 +263,6 @@ func (b definitionBuilder) buildStructTypeProperty(field reflect.StructField, js
 	// check for anonymous
 	if len(fieldType.Name()) == 0 {
 		// anonymous
-		// FIXME: Still need a way to handle anonymous struct model naming.
 		anonType := model.ID + "." + jsonName
 		b.addModel(fieldType, anonType)
 		prop.Ref = spec.MustCreateRef("#/definitions/" + anonType)
