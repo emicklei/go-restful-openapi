@@ -14,14 +14,16 @@ func enrichSwaggerObject(swo *spec.Swagger) {
 			Title:       "Example",
 			Description: "Resource for doing example things",
 			Contact: &spec.ContactInfo{
-				Name:  "dkiser",
-				Email: "domingo.kiser@gmail.com",
-				URL:   "domingo.space",
-			},
+				ContactInfoProps: spec.ContactInfoProps{
+					Name:  "dkiser",
+					Email: "domingo.kiser@gmail.com",
+					URL:   "domingo.space",
+				}},
 			License: &spec.License{
-				Name: "MIT",
-				URL:  "http://mit.org",
-			},
+				LicenseProps: spec.LicenseProps{
+					Name: "MIT",
+					URL:  "http://mit.org",
+				}},
 			Version: "1.0.0",
 		},
 	}
