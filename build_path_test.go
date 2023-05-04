@@ -27,10 +27,11 @@ func TestRouteToPath(t *testing.T) {
 		Returns(200, "list of a b tests", []Sample{}).
 		DefaultReturns("default", Sample{}).
 		Writes([]Sample{}))
-	ws.Route(ws.GET("/a/{b}/{c:[a-z]+}/{d:[1-9]+}/e").To(dummy).
+	ws.Route(ws.GET("/a/{b}/{c:[a-z]+}/{d:[1-9]+}/e/{f:*}").To(dummy).
 		Param(ws.PathParameter("b", "value of b").DefaultValue("default-b")).
 		Param(ws.PathParameter("c", "with regex").DefaultValue("abc")).
 		Param(ws.PathParameter("d", "with regex").DefaultValue("abcef")).
+		Param(ws.PathParameter("f", "with regex")).
 		Param(ws.QueryParameter("q", "value of q").DataType("string").DataFormat("date").
 			DefaultValue("default-q").AllowMultiple(true)).
 		Returns(200, "list of a b tests", []Sample{}).
@@ -46,11 +47,11 @@ func TestRouteToPath(t *testing.T) {
 	} else if len(op.Tags) != 1 || op.Tags[0] != "tests" {
 		t.Error("Metadata/openapi.tags not set.")
 	}
-	if _, exists := p.Paths["/tests/{v}/a/{b}/{c}/{d}/e"]; !exists {
+	if _, exists := p.Paths["/tests/{v}/a/{b}/{c}/{d}/e/{f}"]; !exists {
 		t.Error("Expected path to exist after it was sanitized.")
 	}
 
-	q, exists := getParameter(p.Paths["/tests/{v}/a/{b}/{c}/{d}/e"], "q")
+	q, exists := getParameter(p.Paths["/tests/{v}/a/{b}/{c}/{d}/e/{f}"], "q")
 	if !exists {
 		t.Errorf("get parameter q failed")
 	}
@@ -77,10 +78,11 @@ func TestRouteToPath(t *testing.T) {
 	}
 
 	// Test for patterns
-	path := p.Paths["/tests/{v}/a/{b}/{c}/{d}/e"]
+	path := p.Paths["/tests/{v}/a/{b}/{c}/{d}/e/{f}"]
 	checkPattern(t, path, "c", "[a-z]+")
 	checkPattern(t, path, "d", "[1-9]+")
 	checkPattern(t, path, "v", "")
+	checkPattern(t, path, "f", ".*")
 }
 
 func getParameter(path spec.PathItem, name string) (*spec.Parameter, bool) {
