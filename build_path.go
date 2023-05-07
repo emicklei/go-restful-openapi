@@ -55,6 +55,9 @@ func sanitizePath(restfulPath string) (string, map[string]string) {
 			if !strings.Contains(split[0], "}") {
 				fragment = split[0][1:]
 				pattern := split[1][:len(split[1])-1]
+				if pattern == "*" { // special case
+					pattern = ".*"
+				}
 				patterns[fragment] = pattern
 				fragment = "{" + fragment + "}"
 			}
