@@ -19,6 +19,8 @@ func TestRouteToPath(t *testing.T) {
 	ws.Route(ws.GET("/a/{b}").To(dummy).
 		Doc(description).
 		Notes(notes).
+		Param(ws.PathParameter("i", "some integer param").DataType("integer").AllowableValues(map[string]string{"0": "0", "1": "1"}).DefaultValue("1")).
+		Param(ws.PathParameter("on", "some boolean param").DataType("boolean").AllowableValues(map[string]string{"true": "true", "false": "false"}).DefaultValue("false")).
 		Param(ws.PathParameter("b", "value of b").DefaultValue("default-b")).
 		Param(ws.QueryParameter("q", "value of q").DefaultValue("default-q")).
 		Returns(200, "list of a b tests", []Sample{}).
@@ -42,6 +44,8 @@ func TestRouteToPath(t *testing.T) {
 	if _, exists := p.Paths["/tests/{v}/a/{b}/{c}/{d}/e"]; !exists {
 		t.Error("Expected path to exist after it was sanitized.")
 	}
+
+	checkParamTypes(t, p)
 
 	q, exists := getParameter(p.Paths["/tests/{v}/a/{b}/{c}/{d}/e"], "q")
 	if !exists {
@@ -74,6 +78,38 @@ func TestRouteToPath(t *testing.T) {
 	checkPattern(t, path, "c", "[a-z]+")
 	checkPattern(t, path, "d", "[1-9]+")
 	checkPattern(t, path, "v", "")
+}
+
+func checkParamTypes(t *testing.T, p spec.Paths) {
+	q, exists := getParameter(p.Paths["/tests/{v}/a/{b}"], "i")
+	if !exists {
+		t.Errorf("get parameter 'i' failed")
+	}
+	for _, enum := range q.Enum {
+		_, ok := enum.(int64)
+		if !ok {
+			t.Errorf("enum for param 'i' is not an int64 type, type received: %T", enum)
+		}
+	}
+	_, ok := q.Default.(int64)
+	if !ok {
+		t.Errorf("default for param 'i' is not an int64 type, type received: %T", q.Default)
+	}
+
+	q, exists = getParameter(p.Paths["/tests/{v}/a/{b}"], "on")
+	if !exists {
+		t.Errorf("get parameter 'on' failed")
+	}
+	for _, enum := range q.Enum {
+		_, ok = enum.(bool)
+		if !ok {
+			t.Errorf("enum for param 'on' is not a boolean type, type received: %T", enum)
+		}
+	}
+	_, ok = q.Default.(bool)
+	if !ok {
+		t.Errorf("default for param 'on' is not a boolean type, type received: %T", q.Default)
+	}
 }
 
 func getParameter(path spec.PathItem, name string) (*spec.Parameter, bool) {
@@ -218,7 +254,7 @@ func TestReadArrayObjectInBody(t *testing.T) {
 	if _, exists := postInfo.Responses.StatusCodeResponses[500]; !exists {
 		t.Errorf("Response code 500 not added to spec.")
 	}
-	// indentify  element model type in body array
+	// identify element model type in body array
 	expectedItemRef := spec.MustCreateRef("#/definitions/restfulspec.Sample")
 	postBody := postInfo.Parameters[0]
 	if postBody.Schema.Ref.String() != "" {

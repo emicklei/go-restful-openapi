@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	restful "github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful"
 	"github.com/go-openapi/spec"
 )
 
@@ -111,18 +111,25 @@ func buildOperation(ws *restful.WebService, r restful.Route, patterns map[string
 	return o
 }
 
-// stringAutoType automatically picks the correct type from an ambiguously typed
-// string. Ex. numbers become int, true/false become bool, etc.
-func stringAutoType(ambiguous string) interface{} {
+// stringAutoType picks the correct type when dataType is set. Otherwise, it automatically picks the correct type from
+// an ambiguously typed string. Ex. numbers become int, true/false become bool, etc.
+func stringAutoType(dataType, ambiguous string) interface{} {
 	if ambiguous == "" {
 		return nil
 	}
-	if parsedInt, err := strconv.ParseInt(ambiguous, 10, 64); err == nil {
-		return parsedInt
+
+	if dataType == "" || dataType == "integer" {
+		if parsedInt, err := strconv.ParseInt(ambiguous, 10, 64); err == nil {
+			return parsedInt
+		}
 	}
-	if parsedBool, err := strconv.ParseBool(ambiguous); err == nil {
-		return parsedBool
+
+	if dataType == "" || dataType == "boolean" {
+		if parsedBool, err := strconv.ParseBool(ambiguous); err == nil {
+			return parsedBool
+		}
 	}
+
 	return ambiguous
 }
 
@@ -137,7 +144,7 @@ func buildParameter(r restful.Route, restfulParam *restful.Parameter, pattern st
 	if len(param.AllowableValues) > 0 {
 		p.Enum = make([]interface{}, 0, len(param.AllowableValues))
 		for key := range param.AllowableValues {
-			p.Enum = append(p.Enum, key)
+			p.Enum = append(p.Enum, stringAutoType(p.Type, key))
 		}
 	}
 
@@ -175,7 +182,7 @@ func buildParameter(r restful.Route, restfulParam *restful.Parameter, pattern st
 		} else {
 			p.Type = param.DataType
 		}
-		p.Default = stringAutoType(param.DefaultValue)
+		p.Default = stringAutoType(param.DataType, param.DefaultValue)
 		p.Format = param.DataFormat
 	}
 
@@ -248,11 +255,11 @@ func jsonSchemaType(modelName string) string {
 		"int32": "integer",
 		"int64": "integer",
 
-		"byte":      "integer",
-		"float64":   "number",
-		"float32":   "number",
-		"bool":      "boolean",
-		"time.Time": "string",
+		"byte":          "integer",
+		"float64":       "number",
+		"float32":       "number",
+		"bool":          "boolean",
+		"time.Time":     "string",
 		"time.Duration": "integer",
 	}
 	mapped, ok := schemaMap[modelName]
