@@ -440,7 +440,11 @@ type email struct {
 func TestDoubleByteArray(t *testing.T) {
 	db := definitionBuilder{Definitions: spec.Definitions{}, Config: Config{}}
 	db.addModelFrom(email{})
-	sc, ok := db.Definitions["restfulspec.email.attachments"]
+	scParent, ok := db.Definitions["restfulspec.email"]
+	if !ok {
+		t.Fail()
+	}
+	sc, ok := scParent.Properties["attachments"]
 	if !ok {
 		t.Fail()
 	}
@@ -457,17 +461,51 @@ type matrix struct {
 func TestDoubleStringArray(t *testing.T) {
 	db := definitionBuilder{Definitions: spec.Definitions{}, Config: Config{}}
 	db.addModelFrom(matrix{})
-	sc, ok := db.Definitions["restfulspec.matrix.Cells"]
+	scParent, ok := db.Definitions["restfulspec.matrix"]
 	if !ok {
 		t.Log(db.Definitions)
 		t.Fail()
 	}
-	t.Log(sc)
+	sc, ok := scParent.Properties["Cells"]
+	if !ok {
+		t.Log(db.Definitions)
+		t.Fail()
+	}
+	t.Logf("%+v", sc)
 	if got, want := sc.Type[0], "array"; got != want {
 		t.Errorf("got [%v:%T] want [%v:%T]", got, got, want, want)
 	}
 	tp := sc.Items.Schema.Type
-	t.Log(tp)
+	t.Logf("%+v", tp)
+}
+
+type Cell struct {
+	Value string
+}
+
+type DoubleStructArray struct {
+	Cells [][]Cell
+}
+
+func TestDoubleStructArray(t *testing.T) {
+	db := definitionBuilder{Definitions: spec.Definitions{}, Config: Config{}}
+	db.addModelFrom(DoubleStructArray{})
+
+	schema, ok := db.Definitions["restfulspec.DoubleStructArray"]
+	if !ok {
+		t.Logf("definitions: %v", db.Definitions)
+		t.Fail()
+	}
+	t.Logf("%+v", schema)
+	if want, got := schema.Properties["Cells"].Type[0], "array"; got != want {
+		t.Errorf("got [%v:%T] want [%v:%T]", got, got, want, want)
+	}
+	if want, got := schema.Properties["Cells"].Items.Schema.Type[0], "array"; got != want {
+		t.Errorf("got [%v:%T] want [%v:%T]", got, got, want, want)
+	}
+	if want, got := schema.Properties["Cells"].Items.Schema.Items.Schema.Ref.String(), "#/definitions/restfulspec.Cell"; got != want {
+		t.Errorf("got [%v:%T] want [%v:%T]", got, got, want, want)
+	}
 }
 
 type childPostBuildSwaggerSchema struct {
