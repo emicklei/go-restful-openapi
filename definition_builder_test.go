@@ -414,6 +414,7 @@ func TestPotentialStackOverflow(t *testing.T) {
 
 type Foo struct {
 	b *Bar
+	Embed
 }
 
 // nolint:unused
@@ -424,6 +425,10 @@ type Bar struct {
 		f Foo
 		b []*Bar
 	}
+}
+
+type Embed struct {
+	C string `json:"c"`
 }
 
 func TestRecursiveFieldStructure(t *testing.T) {
@@ -552,4 +557,12 @@ func TestPostBuildSwaggerSchema(t *testing.T) {
 		t.Errorf("got [%v:%T] want [%v:%T]", got, got, want, want)
 	}
 	t.Log(sc.Description)
+}
+
+func TestEmbedStruct(t *testing.T) {
+	db := definitionBuilder{Definitions: spec.Definitions{}, Config: Config{}}
+	db.addModelFrom(Foo{})
+	if got, exists := db.Definitions["restfulspec.Embed"]; exists {
+		t.Errorf("got %v want nil", got)
+	}
 }

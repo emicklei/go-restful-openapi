@@ -256,8 +256,12 @@ func (b definitionBuilder) buildStructTypeProperty(field reflect.StructField, js
 	}
 
 	if field.Name == fieldType.Name() && field.Anonymous && !hasNamedJSONTag(field) {
+		definitions := make(map[string]spec.Schema, len(b.Definitions))
+		for k, v := range b.Definitions {
+			definitions[k] = v
+		}
 		// embedded struct
-		sub := definitionBuilder{b.Definitions, b.Config}
+		sub := definitionBuilder{definitions, b.Config}
 		sub.addModel(fieldType, "")
 		subKey := keyFrom(fieldType, b.Config)
 		// merge properties from sub
