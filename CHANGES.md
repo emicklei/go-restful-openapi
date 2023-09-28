@@ -3,6 +3,10 @@
 # v2+ versions are using the Go module of go-restful v3+
 
 
+## v2.9.2
+
+    - fix unused type because embedded stuct (#113)
+
 ## v2.9.1
 
     - fix set array data format (#96)
