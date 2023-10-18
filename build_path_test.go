@@ -390,3 +390,88 @@ func TestWritesPrimitive(t *testing.T) {
 		}
 	}
 }
+
+// TestWritesRawSchema ensures that if an operation returns a raw schema value, then it
+// is used as such (and not a ref to a definition).
+func TestWritesRawSchema(t *testing.T) {
+	ws := new(restful.WebService)
+	ws.Path("/tests/returns")
+	ws.Consumes(restful.MIME_JSON)
+	ws.Produces(restful.MIME_JSON)
+
+	ws.Route(ws.GET("/raw").To(dummy).
+		Doc("get that returns a file").
+		Returns(200, "raw schema type", SchemaType{RawType: "file"}).
+		Writes(SchemaType{RawType: "file"}))
+
+	p := buildPaths(ws, Config{})
+	t.Log(asJSON(p))
+
+	// Make sure that the operation that returns a raw schema type is correct.
+	if pathInfo, okay := p.Paths["/tests/returns/raw"]; !okay {
+		t.Errorf("Could not find path")
+	} else {
+		getInfo := pathInfo.Get
+
+		if getInfo == nil {
+			t.Errorf("operation was not present")
+		}
+		if getInfo.Summary != "get that returns a file" {
+			t.Errorf("GET description incorrect")
+		}
+		response := getInfo.Responses.StatusCodeResponses[200]
+		if response.Schema.Ref.String() != "" {
+			t.Errorf("Expected no ref; got: %s", response.Schema.Ref.String())
+		}
+		if len(response.Schema.Type) != 1 {
+			t.Errorf("Expected exactly one type; got: %d", len(response.Schema.Type))
+		}
+		if response.Schema.Type[0] != "file" {
+			t.Errorf("Expected a type of file; got: %s", response.Schema.Type[0])
+		}
+	}
+}
+
+// TestWritesRawSchemaWithFormat ensures that if an operation returns a raw schema value with the specified format, then it
+// is used as such (and not a ref to a definition).
+func TestWritesRawSchemaWithFormat(t *testing.T) {
+	ws := new(restful.WebService)
+	ws.Path("/tests/returns")
+	ws.Consumes(restful.MIME_JSON)
+	ws.Produces(restful.MIME_JSON)
+
+	ws.Route(ws.GET("/raw_formatted").To(dummy).
+		Doc("get that returns a file").
+		Returns(200, "raw schema type", SchemaType{RawType: "string", Format: "binary"}).
+		Writes(SchemaType{RawType: "string", Format: "binary"}))
+
+	p := buildPaths(ws, Config{})
+	t.Log(asJSON(p))
+
+	// Make sure that the operation that returns a raw schema type is correct.
+	if pathInfo, okay := p.Paths["/tests/returns/raw_formatted"]; !okay {
+		t.Errorf("Could not find path")
+	} else {
+		getInfo := pathInfo.Get
+
+		if getInfo == nil {
+			t.Errorf("operation was not present")
+		}
+		if getInfo.Summary != "get that returns a file" {
+			t.Errorf("GET description incorrect")
+		}
+		response := getInfo.Responses.StatusCodeResponses[200]
+		if response.Schema.Ref.String() != "" {
+			t.Errorf("Expected no ref; got: %s", response.Schema.Ref.String())
+		}
+		if len(response.Schema.Type) != 1 {
+			t.Errorf("Expected exactly one type; got: %d", len(response.Schema.Type))
+		}
+		if response.Schema.Type[0] != "string" {
+			t.Errorf("Expected a type of string; got: %s", response.Schema.Type[0])
+		}
+		if response.Schema.Format != "binary" {
+			t.Errorf("Expected a format of binary; got: %s", response.Schema.Format)
+		}
+	}
+}
