@@ -14,6 +14,11 @@ import (
 // KeyOpenAPITags is a Metadata key for a restful Route
 const KeyOpenAPITags = "openapi.tags"
 
+// SchemaType is used to wrap any raw types
+// For example, to return a "schema": "file" one can use
+// Returns(http.StatusOK, http.StatusText(http.StatusOK), SchemaType("file"))
+type SchemaType string
+
 func buildPaths(ws *restful.WebService, cfg Config) spec.Paths {
 	p := spec.Paths{Paths: map[string]spec.PathItem{}}
 	for _, each := range ws.Routes() {
@@ -218,8 +223,9 @@ func buildResponse(e restful.ResponseError, cfg Config) (r spec.Response) {
 				// If the response is a primitive type, then don't reference any definitions.
 				// Instead, set the schema's "type" to the model name.
 				r.Schema.AddType(modelName, "")
+			} else if schemaType, ok := e.Model.(SchemaType); ok {
+				r.Schema.AddType(string(schemaType), "")
 			} else {
-				modelName := keyFrom(st, cfg)
 				r.Schema.Ref = spec.MustCreateRef("#/definitions/" + modelName)
 			}
 		}
