@@ -8,8 +8,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/emicklei/go-restful/v3"
 	"github.com/go-openapi/spec"
+
+	"github.com/emicklei/go-restful/v3"
 )
 
 const (
