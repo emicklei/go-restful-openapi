@@ -2,6 +2,7 @@ package restfulspec
 
 import (
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/go-openapi/spec"
@@ -433,8 +434,8 @@ type Embed struct {
 
 func TestRecursiveFieldStructure(t *testing.T) {
 	db := definitionBuilder{Definitions: spec.Definitions{}, Config: Config{}}
+	// should not panic
 	db.addModelFrom(Foo{})
-	t.Log(db)
 }
 
 type email struct {
@@ -453,7 +454,6 @@ func TestDoubleByteArray(t *testing.T) {
 	if !ok {
 		t.Fail()
 	}
-	t.Log(sc)
 	if got, want := sc.Type[0], "array"; got != want {
 		t.Errorf("got [%v:%T] want [%v:%T]", got, got, want, want)
 	}
@@ -476,12 +476,13 @@ func TestDoubleStringArray(t *testing.T) {
 		t.Log(db.Definitions)
 		t.Fail()
 	}
-	t.Logf("%+v", sc)
 	if got, want := sc.Type[0], "array"; got != want {
 		t.Errorf("got [%v:%T] want [%v:%T]", got, got, want, want)
 	}
 	tp := sc.Items.Schema.Type
-	t.Logf("%+v", tp)
+	if got, want := fmt.Sprint(tp), "[array]"; got != want {
+		t.Errorf("got [%v:%T] want [%v:%T]", got, got, want, want)
+	}
 }
 
 type Cell struct {
@@ -501,7 +502,7 @@ func TestDoubleStructArray(t *testing.T) {
 		t.Logf("definitions: %v", db.Definitions)
 		t.Fail()
 	}
-	t.Logf("%+v", schema)
+	//t.Logf("%+v", schema)
 	if want, got := schema.Properties["Cells"].Type[0], "array"; got != want {
 		t.Errorf("got [%v:%T] want [%v:%T]", got, got, want, want)
 	}
@@ -541,22 +542,20 @@ func TestPostBuildSwaggerSchema(t *testing.T) {
 		t.Logf("definitions: %#v", db.Definitions)
 		t.Fail()
 	}
-	t.Logf("sc: %#v", sc)
+	// t.Logf("sc: %#v", sc)
 	if got, want := sc.Description, "parent's description"; got != want {
 		t.Errorf("got [%v:%T] want [%v:%T]", got, got, want, want)
 	}
-	t.Log(sc.Description)
 
 	sc, ok = db.Definitions["restfulspec.childPostBuildSwaggerSchema"]
 	if !ok {
 		t.Logf("definitions: %#v", db.Definitions)
 		t.Fail()
 	}
-	t.Logf("sc: %#v", sc)
+	//t.Logf("sc: %#v", sc)
 	if got, want := sc.Description, "child's description"; got != want {
 		t.Errorf("got [%v:%T] want [%v:%T]", got, got, want, want)
 	}
-	t.Log(sc.Description)
 }
 
 func TestEmbedStruct(t *testing.T) {

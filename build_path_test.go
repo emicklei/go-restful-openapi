@@ -303,7 +303,7 @@ func TestReadArrayObjectInBody(t *testing.T) {
 		Writes([]Sample{}))
 
 	p := buildPaths(ws, Config{})
-	t.Log(asJSON(p))
+	//t.Log(asJSON(p))
 
 	postInfo := p.Paths["/tests/a/a/b"].Post
 
@@ -349,7 +349,7 @@ func TestWritesPrimitive(t *testing.T) {
 		Writes(Sample{}))
 
 	p := buildPaths(ws, Config{})
-	t.Log(asJSON(p))
+	//t.Log(asJSON(p))
 
 	// Make sure that the operation that returns a primitive type is correct.
 	if pathInfo, okay := p.Paths["/tests/returns/primitive"]; !okay {

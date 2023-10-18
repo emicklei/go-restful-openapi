@@ -26,6 +26,7 @@ func TestThatExtraTagsAreReadIntoModel(t *testing.T) {
 		NotNullableField string `x-nullable:"false"`
 		UUID             string `type:"string" format:"UUID"`
 		XGoName          string `x-go-name:"specgoname"`
+		ByteArray        []byte `format:"binary"`
 	}
 	d := definitionsFromStruct(Anything{})
 	props, _ := d["restfulspec.Anything"]
