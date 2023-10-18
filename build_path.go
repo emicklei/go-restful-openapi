@@ -16,8 +16,11 @@ const KeyOpenAPITags = "openapi.tags"
 
 // SchemaType is used to wrap any raw types
 // For example, to return a "schema": "file" one can use
-// Returns(http.StatusOK, http.StatusText(http.StatusOK), SchemaType("file"))
-type SchemaType string
+// Returns(http.StatusOK, http.StatusText(http.StatusOK), SchemaType{RawType: "file"})
+type SchemaType struct {
+	RawType string
+	Format  string
+}
 
 func buildPaths(ws *restful.WebService, cfg Config) spec.Paths {
 	p := spec.Paths{Paths: map[string]spec.PathItem{}}
@@ -224,7 +227,7 @@ func buildResponse(e restful.ResponseError, cfg Config) (r spec.Response) {
 				// Instead, set the schema's "type" to the model name.
 				r.Schema.AddType(modelName, "")
 			} else if schemaType, ok := e.Model.(SchemaType); ok {
-				r.Schema.AddType(string(schemaType), "")
+				r.Schema.AddType(schemaType.RawType, schemaType.Format)
 			} else {
 				r.Schema.Ref = spec.MustCreateRef("#/definitions/" + modelName)
 			}
