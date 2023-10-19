@@ -231,17 +231,23 @@ func buildParameter(r restful.Route, restfulParam *restful.Parameter, pattern st
 		p.Schema = new(spec.Schema)
 		p.SimpleSchema = spec.SimpleSchema{}
 		if st.Kind() == reflect.Array || st.Kind() == reflect.Slice {
-			dataTypeName := keyFrom(st.Elem(), cfg)
-			p.Schema.Type = []string{arrayType}
-			p.Schema.Items = &spec.SchemaOrArray{
-				Schema: &spec.Schema{},
-			}
-			isPrimitive := isPrimitiveType(dataTypeName)
-			if isPrimitive {
-				mapped := jsonSchemaType(dataTypeName)
-				p.Schema.Items.Schema.Type = []string{mapped}
+			// If we see a []byte here, treat it at as a string with binary format
+			if st.Elem().Kind() == reflect.Uint8 {
+				p.Schema.Type = []string{"string"}
+				p.Schema.Format = "binary"
 			} else {
-				p.Schema.Items.Schema.Ref = spec.MustCreateRef(definitionRoot + dataTypeName)
+				dataTypeName := keyFrom(st.Elem(), cfg)
+				p.Schema.Type = []string{arrayType}
+				p.Schema.Items = &spec.SchemaOrArray{
+					Schema: &spec.Schema{},
+				}
+				isPrimitive := isPrimitiveType(dataTypeName)
+				if isPrimitive {
+					mapped := jsonSchemaType(dataTypeName)
+					p.Schema.Items.Schema.Type = []string{mapped}
+				} else {
+					p.Schema.Items.Schema.Ref = spec.MustCreateRef(definitionRoot + dataTypeName)
+				}
 			}
 		} else {
 			dataTypeName := keyFrom(st, cfg)
@@ -277,17 +283,23 @@ func buildResponse(e restful.ResponseError, cfg Config) (r spec.Response) {
 		}
 		r.Schema = new(spec.Schema)
 		if st.Kind() == reflect.Array || st.Kind() == reflect.Slice {
-			modelName := keyFrom(st.Elem(), cfg)
-			r.Schema.Type = []string{arrayType}
-			r.Schema.Items = &spec.SchemaOrArray{
-				Schema: &spec.Schema{},
-			}
-			isPrimitive := isPrimitiveType(modelName)
-			if isPrimitive {
-				mapped := jsonSchemaType(modelName)
-				r.Schema.Items.Schema.Type = []string{mapped}
+			// If we see a []byte here, treat it as a string with binary format
+			if st.Elem().Kind() == reflect.Uint8 {
+				r.Schema.Type = []string{"string"}
+				r.Schema.Format = "binary"
 			} else {
-				r.Schema.Items.Schema.Ref = spec.MustCreateRef(definitionRoot + modelName)
+				modelName := keyFrom(st.Elem(), cfg)
+				r.Schema.Type = []string{arrayType}
+				r.Schema.Items = &spec.SchemaOrArray{
+					Schema: &spec.Schema{},
+				}
+				isPrimitive := isPrimitiveType(modelName)
+				if isPrimitive {
+					mapped := jsonSchemaType(modelName)
+					r.Schema.Items.Schema.Type = []string{mapped}
+				} else {
+					r.Schema.Items.Schema.Ref = spec.MustCreateRef(definitionRoot + modelName)
+				}
 			}
 		} else {
 			modelName := keyFrom(st, cfg)

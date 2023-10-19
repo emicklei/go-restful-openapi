@@ -3,9 +3,8 @@ package restfulspec
 import (
 	"testing"
 
-	"github.com/go-openapi/spec"
-
 	"github.com/emicklei/go-restful/v3"
+	"github.com/go-openapi/spec"
 )
 
 func TestRouteToPath(t *testing.T) {
@@ -327,6 +326,72 @@ func TestReadArrayObjectInBody(t *testing.T) {
 
 	if postBody.Format != "" || postBody.Type != "" || postBody.Default != nil {
 		t.Errorf("Invalid parameter property is set on body property")
+	}
+}
+
+// TestReadAndWriteArrayBytesInBody ensures that if an operation reads []byte in body or returns []byte,
+// then it is represented as "string" with "binary" format.
+func TestReadAndWriteArrayBytesInBody(t *testing.T) {
+	ws := new(restful.WebService)
+	ws.Path("/tests/a")
+	ws.Consumes(restful.MIME_JSON)
+	ws.Produces(restful.MIME_XML)
+
+	ws.Route(ws.POST("/a/b").To(dummy).
+		Doc("post a b test with array of bytes in body").
+		Returns(200, "list of a b tests", []byte{}).
+		Returns(500, "internal server error", []byte{}).
+		Reads([]byte{}).
+		Writes([]byte{}))
+
+	p := buildPaths(ws, Config{})
+	t.Log(asJSON(p))
+
+	postInfo := p.Paths["/tests/a/a/b"].Post
+
+	if postInfo.Summary != "post a b test with array of bytes in body" {
+		t.Errorf("POST description incorrect")
+	}
+	postBody := postInfo.Parameters[0]
+
+	if got, want := postBody.Schema.Type[0], "string"; got != want {
+		t.Errorf("got %v want %v", got, want)
+	}
+	if got, want := postBody.Schema.Format, "binary"; got != want {
+		t.Errorf("got %v want %v", got, want)
+	}
+	if postBody.Schema.Ref.String() != "" {
+		t.Errorf("you shouldn't have body Ref setting when using array in body!")
+	}
+	if postBody.Format != "" || postBody.Type != "" || postBody.Default != nil {
+		t.Errorf("Invalid parameter property is set on body property")
+	}
+
+	if _, exists := postInfo.Responses.StatusCodeResponses[200]; !exists {
+		t.Errorf("Response code 200 not added to spec.")
+	}
+	sch := postInfo.Responses.StatusCodeResponses[200].Schema
+	if sch == nil {
+		t.Errorf("Schema for Response code 200 not added to spec.")
+	}
+	if got, want := sch.Type[0], "string"; got != want {
+		t.Errorf("got %v want %v", got, want)
+	}
+	if got, want := sch.Format, "binary"; got != want {
+		t.Errorf("got %v want %v", got, want)
+	}
+	if _, exists := postInfo.Responses.StatusCodeResponses[500]; !exists {
+		t.Errorf("Response code 500 not added to spec.")
+	}
+	sch = postInfo.Responses.StatusCodeResponses[500].Schema
+	if sch == nil {
+		t.Errorf("Schema for Response code 500 not added to spec.")
+	}
+	if got, want := sch.Type[0], "string"; got != want {
+		t.Errorf("got %v want %v", got, want)
+	}
+	if got, want := sch.Format, "binary"; got != want {
+		t.Errorf("got %v want %v", got, want)
 	}
 }
 
