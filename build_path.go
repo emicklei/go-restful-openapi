@@ -251,6 +251,9 @@ func buildParameter(r restful.Route, restfulParam *restful.Parameter, pattern st
 			} else {
 				p.Schema.Items.Schema.Ref = spec.MustCreateRef(definitionRoot + dataTypeName)
 			}
+		} else if schemaType, ok := r.ReadSample.(SchemaType); ok {
+			p.Schema.Type = []string{schemaType.RawType}
+			p.Schema.Format = schemaType.Format
 		} else {
 			dataTypeName := keyFrom(st, cfg)
 			p.Schema.Ref = spec.MustCreateRef(definitionRoot + dataTypeName)
