@@ -390,3 +390,155 @@ func TestWritesPrimitive(t *testing.T) {
 		}
 	}
 }
+
+// TestWritesRawSchema ensures that if an operation returns a raw schema value, then it
+// is used as such (and not a ref to a definition).
+func TestWritesRawSchema(t *testing.T) {
+	ws := new(restful.WebService)
+	ws.Path("/tests/returns")
+	ws.Consumes(restful.MIME_JSON)
+	ws.Produces(restful.MIME_JSON)
+
+	ws.Route(ws.GET("/raw").To(dummy).
+		Doc("get that returns a file").
+		Returns(200, "raw schema type", SchemaType{RawType: "file"}).
+		Writes(SchemaType{RawType: "file"}))
+
+	p := buildPaths(ws, Config{})
+	t.Log(asJSON(p))
+
+	// Make sure that the operation that returns a raw schema type is correct.
+	if pathInfo, okay := p.Paths["/tests/returns/raw"]; !okay {
+		t.Errorf("Could not find path")
+	} else {
+		getInfo := pathInfo.Get
+
+		if getInfo == nil {
+			t.Errorf("operation was not present")
+		}
+		if getInfo.Summary != "get that returns a file" {
+			t.Errorf("GET description incorrect")
+		}
+		response := getInfo.Responses.StatusCodeResponses[200]
+		if response.Schema.Ref.String() != "" {
+			t.Errorf("Expected no ref; got: %s", response.Schema.Ref.String())
+		}
+		if len(response.Schema.Type) != 1 {
+			t.Errorf("Expected exactly one type; got: %d", len(response.Schema.Type))
+		}
+		if response.Schema.Type[0] != "file" {
+			t.Errorf("Expected a type of file; got: %s", response.Schema.Type[0])
+		}
+	}
+}
+
+// TestWritesRawSchemaWithFormat ensures that if an operation returns a raw schema value with the specified format, then it
+// is used as such (and not a ref to a definition).
+func TestWritesRawSchemaWithFormat(t *testing.T) {
+	ws := new(restful.WebService)
+	ws.Path("/tests/returns")
+	ws.Consumes(restful.MIME_JSON)
+	ws.Produces(restful.MIME_JSON)
+
+	ws.Route(ws.GET("/raw_formatted").To(dummy).
+		Doc("get that returns a file").
+		Returns(200, "raw schema type", SchemaType{RawType: "string", Format: "binary"}).
+		Writes(SchemaType{RawType: "string", Format: "binary"}))
+
+	p := buildPaths(ws, Config{})
+	t.Log(asJSON(p))
+
+	// Make sure that the operation that returns a raw schema type is correct.
+	if pathInfo, okay := p.Paths["/tests/returns/raw_formatted"]; !okay {
+		t.Errorf("Could not find path")
+	} else {
+		getInfo := pathInfo.Get
+
+		if getInfo == nil {
+			t.Errorf("operation was not present")
+		}
+		if getInfo.Summary != "get that returns a file" {
+			t.Errorf("GET description incorrect")
+		}
+		response := getInfo.Responses.StatusCodeResponses[200]
+		if response.Schema.Ref.String() != "" {
+			t.Errorf("Expected no ref; got: %s", response.Schema.Ref.String())
+		}
+		if len(response.Schema.Type) != 1 {
+			t.Errorf("Expected exactly one type; got: %d", len(response.Schema.Type))
+		}
+		if response.Schema.Type[0] != "string" {
+			t.Errorf("Expected a type of string; got: %s", response.Schema.Type[0])
+		}
+		if response.Schema.Format != "binary" {
+			t.Errorf("Expected a format of binary; got: %s", response.Schema.Format)
+		}
+	}
+}
+
+// TestReadAndWriteArrayBytesInBody ensures that if an operation reads []byte in body or returns []byte,
+// then it is represented as "string" with "binary" format.
+func TestReadAndWriteArrayBytesInBody(t *testing.T) {
+	ws := new(restful.WebService)
+	ws.Path("/tests/a")
+	ws.Consumes(restful.MIME_JSON)
+	ws.Produces(restful.MIME_XML)
+
+	binaryType := SchemaType{RawType: "string", Format: "binary"}
+	ws.Route(ws.POST("/a/b").To(dummy).
+		Doc("post a b test with array of bytes in body").
+		Returns(200, "list of a b tests", binaryType).
+		Returns(500, "internal server error", binaryType).
+		Reads(binaryType).
+		Writes(binaryType))
+
+	p := buildPaths(ws, Config{})
+	t.Log(asJSON(p))
+
+	postInfo := p.Paths["/tests/a/a/b"].Post
+
+	if postInfo.Summary != "post a b test with array of bytes in body" {
+		t.Errorf("POST description incorrect")
+	}
+	postBody := postInfo.Parameters[0]
+
+	if got, want := postBody.Schema.Type[0], "string"; got != want {
+		t.Errorf("got %v want %v", got, want)
+	}
+	if got, want := postBody.Schema.Format, "binary"; got != want {
+		t.Errorf("got %v want %v", got, want)
+	}
+	if postBody.Schema.Ref.String() != "" {
+		t.Errorf("you shouldn't have body Ref setting when using array in body!")
+	}
+	if postBody.Format != "" || postBody.Type != "" || postBody.Default != nil {
+		t.Errorf("Invalid parameter property is set on body property")
+	}
+
+	if _, exists := postInfo.Responses.StatusCodeResponses[200]; !exists {
+		t.Errorf("Response code 200 not added to spec.")
+	}
+	sch := postInfo.Responses.StatusCodeResponses[200].Schema
+	if sch == nil {
+		t.Errorf("Schema for Response code 200 not added to spec.")
+	}
+	if got, want := sch.Type[0], "string"; got != want {
+		t.Errorf("got %v want %v", got, want)
+	}
+	if got, want := sch.Format, "binary"; got != want {
+		t.Errorf("got %v want %v", got, want)
+	}
+	if _, exists := postInfo.Responses.StatusCodeResponses[500]; !exists {
+		t.Errorf("Response code 500 not added to spec.")
+	}
+	sch = postInfo.Responses.StatusCodeResponses[500].Schema
+	if sch == nil {
+		t.Errorf("Schema for Response code 500 not added to spec.")
+	}
+	if got, want := sch.Type[0], "string"; got != want {
+		t.Errorf("got %v want %v", got, want)
+	}
+	if got, want := sch.Format, "binary"; got != want {
+		t.Errorf("got %v want %v", got, want)
+	}
+}
