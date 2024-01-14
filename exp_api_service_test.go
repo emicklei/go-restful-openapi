@@ -8,7 +8,7 @@ import (
 )
 
 // nolint:paralleltest
-func TestBuildSwagger(t *testing.T) {
+func TestBuildDoc(t *testing.T) {
 	path := "/testPath"
 
 	ws1 := new(restful.WebService)
@@ -21,9 +21,9 @@ func TestBuildSwagger(t *testing.T) {
 
 	c := Config{}
 	c.WebServices = []*restful.WebService{ws1, ws2}
-	s := BuildSwagger(c)
+	doc := BuildDoc(c)
 
-	if !(s.Paths.Paths[path].Get != nil && s.Paths.Paths[path].Delete != nil) {
+	if !(doc.Paths.Find(path).Get != nil && doc.Paths.Find(path).Delete != nil) {
 		t.Errorf("Swagger spec should have methods for GET and DELETE")
 	}
 

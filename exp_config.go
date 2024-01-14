@@ -22,16 +22,17 @@ type PostBuildSwaggerObjectFunc func(s *spec.Swagger)
 
 // DefinitionNameHandlerFunc generate name by this handler for definition without json tag.
 // example: (for more, see file definition_name_test.go)
-//   field	      			 definition_name
-//   Name `json:"name"`  ->  name
-// 	 Name                ->  Name
+//
+//	  field	      			 definition_name
+//	  Name `json:"name"`  ->  name
+//		 Name                ->  Name
 //
 // there are some example provided for use
-//   DefaultNameHandler         GoRestfulDefinition -> GoRestfulDefinition (not changed)
-//   LowerSnakeCasedNameHandler  GoRestfulDefinition -> go_restful_definition
-//   LowerCamelCasedNameHandler  GoRestfulDefinition -> goRestfulDefinition
-//   GoLowerCamelCasedNameHandler HTTPRestfulDefinition -> httpRestfulDefinition
 //
+//	DefaultNameHandler         GoRestfulDefinition -> GoRestfulDefinition (not changed)
+//	LowerSnakeCasedNameHandler  GoRestfulDefinition -> go_restful_definition
+//	LowerCamelCasedNameHandler  GoRestfulDefinition -> goRestfulDefinition
+//	GoLowerCamelCasedNameHandler HTTPRestfulDefinition -> httpRestfulDefinition
 type DefinitionNameHandlerFunc func(string) string
 
 // Config holds service api metadata.
@@ -40,8 +41,6 @@ type Config struct {
 	Host string
 	// [optional] If set then set this field with the generated Swagger Object
 	Schemes []string
-	// WebServicesURL is a DEPRECATED field; it never had any effect in this package.
-	WebServicesURL string
 	// APIPath is the path where the JSON api is available, e.g. /apidocs.json
 	APIPath string
 	// api listing is constructed from this list of restful WebServices.

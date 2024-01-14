@@ -14,23 +14,9 @@ import (
 )
 
 const (
-	// KeyOpenAPITags is a Metadata key for a restful Route
-	KeyOpenAPITags = "openapi.tags"
-
-	// ExtensionPrefix is the only prefix accepted for VendorExtensible extension keys
-	ExtensionPrefix = "x-"
-
 	arrayType      = "array"
 	definitionRoot = "#/definitions/"
 )
-
-// SchemaType is used to wrap any raw types
-// For example, to return a "schema": "file" one can use
-// Returns(http.StatusOK, http.StatusText(http.StatusOK), SchemaType{RawType: "file"})
-type SchemaType struct {
-	RawType string
-	Format  string
-}
 
 func buildPaths(ws *restful.WebService, cfg Config) spec.Paths {
 	p := spec.Paths{Paths: map[string]spec.PathItem{}}
