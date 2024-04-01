@@ -3,6 +3,10 @@
 # v2+ versions are using the Go module of go-restful v3+
 
 
+## v2.10.2
+
+- fix handle time.Time field #120 (#121)
+
 ## v2.10.1
 
 - Add type SchemaType to use in Return calls allowing for specification of a raw type value and format (#118) 
