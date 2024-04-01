@@ -194,6 +194,17 @@ func (b definitionBuilder) buildProperty(field reflect.StructField, model *spec.
 	}
 
 	fieldKind := fieldType.Kind()
+
+	// check for primitive first
+	fieldTypeName := keyFrom(fieldType, b.Config)
+	if b.isPrimitiveType(fieldTypeName, fieldKind) {
+		mapped := b.jsonSchemaType(fieldTypeName, fieldKind)
+		prop.Type = []string{mapped}
+		prop.Format = b.jsonSchemaFormat(fieldTypeName, fieldKind)
+		return jsonName, modelDescription, prop
+	}
+
+	// not a primitive
 	switch {
 	case fieldKind == reflect.Struct:
 		jsonName, prop := b.buildStructTypeProperty(field, jsonName, model)
@@ -209,13 +220,6 @@ func (b definitionBuilder) buildProperty(field reflect.StructField, model *spec.
 		return jsonName, modelDescription, prop
 	}
 
-	fieldTypeName := keyFrom(fieldType, b.Config)
-	if b.isPrimitiveType(fieldTypeName, fieldKind) {
-		mapped := b.jsonSchemaType(fieldTypeName, fieldKind)
-		prop.Type = []string{mapped}
-		prop.Format = b.jsonSchemaFormat(fieldTypeName, fieldKind)
-		return jsonName, modelDescription, prop
-	}
 	modelType := keyFrom(fieldType, b.Config)
 	prop.Ref = spec.MustCreateRef("#/definitions/" + modelType)
 

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/go-openapi/spec"
 )
@@ -563,5 +564,19 @@ func TestEmbedStruct(t *testing.T) {
 	db.addModelFrom(Foo{})
 	if got, exists := db.Definitions["restfulspec.Embed"]; exists {
 		t.Errorf("got %v want nil", got)
+	}
+}
+
+type timeHolder struct {
+	when time.Time
+}
+
+func TestTimeField(t *testing.T) {
+	db := definitionBuilder{Definitions: spec.Definitions{}, Config: Config{}}
+	db.addModelFrom(timeHolder{})
+	sc := db.Definitions["restfulspec.timeHolder"]
+	pr := sc.Properties["when"]
+	if got, want := pr.Format, "date-time"; got != want {
+		t.Errorf("got [%v:%T] want [%v:%T]", got, got, want, want)
 	}
 }
