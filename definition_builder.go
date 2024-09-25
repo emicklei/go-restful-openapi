@@ -303,7 +303,6 @@ func (b definitionBuilder) buildStructTypeProperty(field reflect.StructField, js
 
 func (b definitionBuilder) buildArrayTypeProperty(field reflect.StructField, jsonName, modelName string) (nameJson string, prop spec.Schema) {
 	setPropertyMetadata(&prop, field)
-
 	fieldType := field.Type
 	if fieldType.Elem().Kind() == reflect.Uint8 {
 		stringt := "string"
@@ -316,7 +315,6 @@ func (b definitionBuilder) buildArrayTypeProperty(field reflect.StructField, jso
 	itemSchema := &prop
 	itemType := fieldType
 	isArray := b.isSliceOrArrayType(fieldType.Kind())
-
 	for isArray {
 		itemType = itemType.Elem()
 		isArray = b.isSliceOrArrayType(itemType.Kind())
@@ -348,7 +346,6 @@ func (b definitionBuilder) buildArrayTypeProperty(field reflect.StructField, jso
 	} else {
 		itemSchema.Ref = spec.MustCreateRef("#/definitions/" + elemTypeName)
 	}
-
 	// add|overwrite model for element type
 	if itemType.Kind() == reflect.Ptr {
 		itemType = itemType.Elem()
@@ -356,7 +353,6 @@ func (b definitionBuilder) buildArrayTypeProperty(field reflect.StructField, jso
 	if !isPrimitive {
 		b.addModel(itemType, elemTypeName)
 	}
-
 	return jsonName, prop
 }
 
