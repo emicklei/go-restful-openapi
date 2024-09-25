@@ -52,15 +52,7 @@ func setEnumValues(prop *spec.Schema, field reflect.StructField) {
 		for _, s := range strings.Split(tag, "|") {
 			enums = append(enums, s)
 		}
-
-		kind := field.Type.Kind()
-
-		if kind == reflect.Slice || kind == reflect.Array {
-			prop.Items.Schema.Enum = enums
-		} else {
-			prop.Enum = enums
-		}
-
+		prop.Enum = enums
 	}
 }
 

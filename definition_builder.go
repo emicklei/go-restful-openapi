@@ -1,8 +1,6 @@
 package restfulspec
 
 import (
-	"encoding/json"
-	"fmt"
 	"reflect"
 	"strings"
 
@@ -304,13 +302,7 @@ func (b definitionBuilder) buildStructTypeProperty(field reflect.StructField, js
 }
 
 func (b definitionBuilder) buildArrayTypeProperty(field reflect.StructField, jsonName, modelName string) (nameJson string, prop spec.Schema) {
-	jsonString, _ := json.MarshalIndent(prop, "", " ")
-	fmt.Printf("%s", jsonString)
-
 	setPropertyMetadata(&prop, field)
-
-	jsonString, _ = json.MarshalIndent(prop, "", " ")
-	fmt.Printf("%s", jsonString)
 
 	fieldType := field.Type
 	if fieldType.Elem().Kind() == reflect.Uint8 {
@@ -324,6 +316,7 @@ func (b definitionBuilder) buildArrayTypeProperty(field reflect.StructField, jso
 	itemSchema := &prop
 	itemType := fieldType
 	isArray := b.isSliceOrArrayType(fieldType.Kind())
+
 	for isArray {
 		itemType = itemType.Elem()
 		isArray = b.isSliceOrArrayType(itemType.Kind())
@@ -341,6 +334,13 @@ func (b definitionBuilder) buildArrayTypeProperty(field reflect.StructField, jso
 	}
 	isPrimitive := b.isPrimitiveType(itemType.Name(), itemType.Kind())
 	elemTypeName := b.getElementTypeName(modelName, jsonName, itemType)
+
+	// If enum exists, move the enum definition from the `type: "array"` definition to `items`.
+	if prop.Enum != nil && prop.Items != nil {
+		prop.Items.Schema.Enum = prop.Enum
+		prop.Enum = nil
+	}
+
 	if isPrimitive {
 		mapped := b.jsonSchemaType(elemTypeName, itemType.Kind())
 		itemSchema.Type = []string{mapped}
@@ -348,6 +348,7 @@ func (b definitionBuilder) buildArrayTypeProperty(field reflect.StructField, jso
 	} else {
 		itemSchema.Ref = spec.MustCreateRef("#/definitions/" + elemTypeName)
 	}
+
 	// add|overwrite model for element type
 	if itemType.Kind() == reflect.Ptr {
 		itemType = itemType.Elem()
@@ -355,9 +356,6 @@ func (b definitionBuilder) buildArrayTypeProperty(field reflect.StructField, jso
 	if !isPrimitive {
 		b.addModel(itemType, elemTypeName)
 	}
-
-	jsonString, _ = json.MarshalIndent(prop, "", " ")
-	fmt.Printf("%s", jsonString)
 
 	return jsonName, prop
 }
