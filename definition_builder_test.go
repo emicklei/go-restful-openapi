@@ -604,16 +604,21 @@ func TestCustomSchemaFormatHandler(t *testing.T) {
 	}}
 	db.addModelFrom(customSchemaFormatHolder{})
 	sc := db.Definitions["restfulspec.customSchemaFormatHolder"]
-	pr := sc.Properties["url"]
 
-	if got, want := pr.Format, "uri"; got != want {
-		t.Errorf("got [%v:%T] want [%v:%T]", got, got, want, want)
+	testCases := []struct {
+		Field    string
+		Expected string
+	}{
+		{Field: "url", Expected: "uri"},
+		{Field: "email", Expected: "email"},
 	}
 
-	pr = sc.Properties["email"]
+	for _, testCase := range testCases {
+		pr := sc.Properties[testCase.Field]
 
-	if got, want := pr.Format, "email"; got != want {
-		t.Errorf("got [%v:%T] want [%v:%T]", got, got, want, want)
+		if got, want := pr.Format, testCase.Expected; got != want {
+			t.Errorf("got [%v:%T] want [%v:%T]", got, got, want, want)
+		}
 	}
 }
 
