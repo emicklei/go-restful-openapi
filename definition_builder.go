@@ -205,18 +205,28 @@ func (b definitionBuilder) buildProperty(field reflect.StructField, model *spec.
 	}
 
 	// not a primitive
+	// Need to re-assign the `example` field, because the `prop` variable is a new one, different than the `prop` variable
+	// from the above lines that we have assigned the `example` field with (via `setPropertyMetadata`).
 	switch {
 	case fieldKind == reflect.Struct:
 		jsonName, prop := b.buildStructTypeProperty(field, jsonName, model)
+		setExample(&prop, field)
+
 		return jsonName, modelDescription, prop
 	case b.isSliceOrArrayType(fieldKind):
 		jsonName, prop := b.buildArrayTypeProperty(field, jsonName, modelName)
+		setExample(&prop, field)
+
 		return jsonName, modelDescription, prop
 	case fieldKind == reflect.Ptr:
 		jsonName, prop := b.buildPointerTypeProperty(field, jsonName, modelName)
+		setExample(&prop, field)
+
 		return jsonName, modelDescription, prop
 	case fieldKind == reflect.Map:
 		jsonName, prop := b.buildMapTypeProperty(field, jsonName, modelName)
+		setExample(&prop, field)
+
 		return jsonName, modelDescription, prop
 	}
 
@@ -229,6 +239,7 @@ func (b definitionBuilder) buildProperty(field reflect.StructField, model *spec.
 		prop.Ref = spec.MustCreateRef("#/definitions/" + nestedTypeName)
 		b.addModel(fieldType, nestedTypeName)
 	}
+
 	return jsonName, modelDescription, prop
 }
 
