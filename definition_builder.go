@@ -1,6 +1,8 @@
 package restfulspec
 
 import (
+	"encoding/json"
+	"fmt"
 	"reflect"
 	"strings"
 
@@ -302,7 +304,14 @@ func (b definitionBuilder) buildStructTypeProperty(field reflect.StructField, js
 }
 
 func (b definitionBuilder) buildArrayTypeProperty(field reflect.StructField, jsonName, modelName string) (nameJson string, prop spec.Schema) {
+	jsonString, _ := json.MarshalIndent(prop, "", " ")
+	fmt.Printf("%s", jsonString)
+
 	setPropertyMetadata(&prop, field)
+
+	jsonString, _ = json.MarshalIndent(prop, "", " ")
+	fmt.Printf("%s", jsonString)
+
 	fieldType := field.Type
 	if fieldType.Elem().Kind() == reflect.Uint8 {
 		stringt := "string"
@@ -346,6 +355,10 @@ func (b definitionBuilder) buildArrayTypeProperty(field reflect.StructField, jso
 	if !isPrimitive {
 		b.addModel(itemType, elemTypeName)
 	}
+
+	jsonString, _ = json.MarshalIndent(prop, "", " ")
+	fmt.Printf("%s", jsonString)
+
 	return jsonName, prop
 }
 

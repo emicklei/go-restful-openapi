@@ -580,3 +580,21 @@ func TestTimeField(t *testing.T) {
 		t.Errorf("got [%v:%T] want [%v:%T]", got, got, want, want)
 	}
 }
+
+type arrayofEnumsHolder struct {
+	Titles []string `json:"titles" enum:"EMPLOYEEE|MANAGER"`
+}
+
+func TestArrayOfEnumsField(t *testing.T) {
+	db := definitionBuilder{Definitions: spec.Definitions{}, Config: Config{}}
+	db.addModelFrom(arrayofEnumsHolder{})
+	sc := db.Definitions["restfulspec.arrayofEnumsHolder"]
+	pr := sc.Properties["titles"]
+
+	jsonString, _ := json.MarshalIndent(pr, "", " ")
+
+	fmt.Printf("%s", jsonString)
+	// if got, want := pr.Format, "date-time"; got != want {
+	// 	t.Errorf("got [%v:%T] want [%v:%T]", got, got, want, want)
+	// }
+}
