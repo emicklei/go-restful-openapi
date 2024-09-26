@@ -205,8 +205,7 @@ func (b definitionBuilder) buildProperty(field reflect.StructField, model *spec.
 	}
 
 	// not a primitive
-	// Need to re-assign the `example` field, because the `prop` variable is a new one, different than the `prop` variable
-	// from the above lines that we have assigned the `example` field with (via `setPropertyMetadata`).
+	// Since the `prop` variable in each of the cases below is a new reference, we need to re-set the `Example` field.
 	switch {
 	case fieldKind == reflect.Struct:
 		jsonName, prop := b.buildStructTypeProperty(field, jsonName, model)
