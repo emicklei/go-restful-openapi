@@ -332,6 +332,13 @@ func (b definitionBuilder) buildArrayTypeProperty(field reflect.StructField, jso
 	}
 	isPrimitive := b.isPrimitiveType(itemType.Name(), itemType.Kind())
 	elemTypeName := b.getElementTypeName(modelName, jsonName, itemType)
+
+	// If enum exists, move the enum definition from the `type: "array"` definition to `items`.
+	if prop.Enum != nil {
+		prop.Items.Schema.Enum = prop.Enum
+		prop.Enum = nil
+	}
+
 	if isPrimitive {
 		mapped := b.jsonSchemaType(elemTypeName, itemType.Kind())
 		itemSchema.Type = []string{mapped}

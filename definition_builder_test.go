@@ -3,6 +3,7 @@ package restfulspec
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"testing"
 	"time"
 
@@ -577,6 +578,21 @@ func TestTimeField(t *testing.T) {
 	sc := db.Definitions["restfulspec.timeHolder"]
 	pr := sc.Properties["when"]
 	if got, want := pr.Format, "date-time"; got != want {
+		t.Errorf("got [%v:%T] want [%v:%T]", got, got, want, want)
+	}
+}
+
+type arrayofEnumsHolder struct {
+	Titles []string `json:"titles" enum:"EMPLOYEE|MANAGER"`
+}
+
+func TestArrayOfEnumsField(t *testing.T) {
+	db := definitionBuilder{Definitions: spec.Definitions{}, Config: Config{}}
+	db.addModelFrom(arrayofEnumsHolder{})
+	sc := db.Definitions["restfulspec.arrayofEnumsHolder"]
+	pr := sc.Properties["titles"]
+
+	if got, want := pr.Items.Schema.Enum, []interface{}{"EMPLOYEE", "MANAGER"}; !reflect.DeepEqual(got, want) {
 		t.Errorf("got [%v:%T] want [%v:%T]", got, got, want, want)
 	}
 }
