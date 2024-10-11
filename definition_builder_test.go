@@ -596,3 +596,106 @@ func TestArrayOfEnumsField(t *testing.T) {
 		t.Errorf("got [%v:%T] want [%v:%T]", got, got, want, want)
 	}
 }
+
+type URLField string
+type EmailField string
+
+type customSchemaFormatHolder struct {
+	URL   URLField   `json:"url"`
+	Email EmailField `json:"email"`
+}
+
+func TestCustomSchemaFormatHandler(t *testing.T) {
+	db := definitionBuilder{Definitions: spec.Definitions{}, Config: Config{
+		SchemaFormatHandler: func(modelName string) string {
+			switch modelName {
+			case "restfulspec.URLField":
+				return "uri"
+			case "restfulspec.EmailField":
+				return "email"
+			}
+
+			return ""
+		},
+	}}
+	db.addModelFrom(customSchemaFormatHolder{})
+	sc := db.Definitions["restfulspec.customSchemaFormatHolder"]
+
+	testCases := []struct {
+		Field    string
+		Expected string
+	}{
+		{Field: "url", Expected: "uri"},
+		{Field: "email", Expected: "email"},
+	}
+
+	for _, testCase := range testCases {
+		pr := sc.Properties[testCase.Field]
+
+		if got, want := pr.Format, testCase.Expected; got != want {
+			t.Errorf("got [%v:%T] want [%v:%T]", got, got, want, want)
+		}
+	}
+}
+
+type exampleTagHolder struct {
+	URL         string                      `json:"url" example:"https://example.com"`
+	URLs        []string                    `json:"urls" example:"[\"https://example.com\"]"`
+	Email       string                      `json:"email" example:"test@example.com"`
+	Status      string                      `json:"status"`
+	Description simpleChildExampleTagHolder `json:"description" example:"Test description"`
+	Companies   []childExampleTagHolder     `json:"companies"`
+}
+
+type childExampleTagHolder struct {
+	Name string `json:"name" example:"Company A"`
+}
+
+type simpleChildExampleTagHolder string
+
+func TestCustomTagHandler(t *testing.T) {
+	db := definitionBuilder{Definitions: spec.Definitions{}, Config: Config{}}
+	db.addModelFrom(exampleTagHolder{})
+	sc := db.Definitions["restfulspec.exampleTagHolder"]
+
+	pr := sc.Properties["url"]
+
+	testCases := []struct {
+		Field    string
+		Expected string
+	}{
+		{Field: "url", Expected: "https://example.com"},
+		{Field: "urls", Expected: "[\"https://example.com\"]"},
+		{Field: "email", Expected: "test@example.com"},
+		{Field: "description", Expected: "Test description"},
+	}
+
+	for _, testCase := range testCases {
+		pr = sc.Properties[testCase.Field]
+
+		if got, want := pr.Example, testCase.Expected; got != want {
+			t.Errorf("got [%v:%T] want [%v:%T]", got, got, want, want)
+		}
+	}
+
+	// Test fields without examples and `companies` child structs.
+	nilTestCases := []string{
+		"status",
+		"companies",
+	}
+
+	for _, testCase := range nilTestCases {
+		pr = sc.Properties[testCase]
+
+		if got := pr.Example; got != nil {
+			t.Errorf("got [%v:%T] want [%v:%T]", got, got, nil, nil)
+		}
+	}
+
+	sc = db.Definitions["restfulspec.childExampleTagHolder"]
+	pr = sc.Properties["name"]
+
+	if got, want := pr.Example, "Company A"; got != want {
+		t.Errorf("got [%v:%T] want [%v:%T]", got, got, want, want)
+	}
+}
