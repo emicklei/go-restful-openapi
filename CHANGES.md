@@ -2,6 +2,9 @@
 
 # v2+ versions are using the Go module of go-restful v3+
 
+## v2.11.0
+
+- allow providing example value to a property via "example" tag (#124), thanks to Try Ajitiono <ballinst@gmail.com>  
 
 ## v2.10.2
 
