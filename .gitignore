@@ -1,2 +1,7 @@
 examples/examples
 .vscode
+# IDE
+.idea/
+
+# Claude Code
+CLAUDE.md

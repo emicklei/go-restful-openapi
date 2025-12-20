@@ -6,7 +6,7 @@ import (
 )
 
 // NewOpenAPIService returns a new WebService that provides the API documentation of all services
-// conform the OpenAPI documentation specifcation.
+// conforming to the OpenAPI documentation specification.
 func NewOpenAPIService(config Config) *restful.WebService {
 
 	ws := new(restful.WebService)
@@ -74,5 +74,5 @@ type specResource struct {
 }
 
 func (s specResource) getSwagger(req *restful.Request, resp *restful.Response) {
-	resp.WriteAsJson(s.swagger)
+	_ = resp.WriteAsJson(s.swagger)
 }
