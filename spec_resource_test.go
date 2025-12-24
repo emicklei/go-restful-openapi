@@ -23,7 +23,7 @@ func TestBuildSwagger(t *testing.T) {
 	c.WebServices = []*restful.WebService{ws1, ws2}
 	s := BuildSwagger(c)
 
-	if !(s.Paths.Paths[path].Get != nil && s.Paths.Paths[path].Delete != nil) {
+	if s.Paths.Paths[path].Get == nil || s.Paths.Paths[path].Delete == nil {
 		t.Errorf("Swagger spec should have methods for GET and DELETE")
 	}
 

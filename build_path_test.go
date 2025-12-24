@@ -230,7 +230,7 @@ func TestRouteToPathForAllowableValues(t *testing.T) {
 		t.Errorf("Path expected to have 3 parameters but had %d", len(path.Get.Parameters))
 	}
 	if path.Get.Parameters[1].Name != "cheese" || len(path.Get.Parameters[1].Enum) != len(allowedCheeses) {
-		t.Errorf("Path parameter 'cheese' expected to have enum of allowable values of lenght %d but was of length %d", len(allowedCheeses), len(path.Get.Parameters[1].Enum))
+		t.Errorf("Path parameter 'cheese' expected to have enum of allowable values of length %d but was of length %d", len(allowedCheeses), len(path.Get.Parameters[1].Enum))
 	}
 	for _, cheeseIface := range path.Get.Parameters[1].Enum {
 		cheese := cheeseIface.(string)
@@ -414,7 +414,7 @@ func TestWritesRawSchema(t *testing.T) {
 		getInfo := pathInfo.Get
 
 		if getInfo == nil {
-			t.Errorf("operation was not present")
+			t.Fatal("operation was not present")
 		}
 		if getInfo.Summary != "get that returns a file" {
 			t.Errorf("GET description incorrect")
@@ -455,7 +455,7 @@ func TestWritesRawSchemaWithFormat(t *testing.T) {
 		getInfo := pathInfo.Get
 
 		if getInfo == nil {
-			t.Errorf("operation was not present")
+			t.Fatal("operation was not present")
 		}
 		if getInfo.Summary != "get that returns a file" {
 			t.Errorf("GET description incorrect")
@@ -520,7 +520,7 @@ func TestReadAndWriteArrayBytesInBody(t *testing.T) {
 	}
 	sch := postInfo.Responses.StatusCodeResponses[200].Schema
 	if sch == nil {
-		t.Errorf("Schema for Response code 200 not added to spec.")
+		t.Fatal("Schema for Response code 200 not added to spec.")
 	}
 	if got, want := sch.Type[0], "string"; got != want {
 		t.Errorf("got %v want %v", got, want)
@@ -533,7 +533,7 @@ func TestReadAndWriteArrayBytesInBody(t *testing.T) {
 	}
 	sch = postInfo.Responses.StatusCodeResponses[500].Schema
 	if sch == nil {
-		t.Errorf("Schema for Response code 500 not added to spec.")
+		t.Fatal("Schema for Response code 500 not added to spec.")
 	}
 	if got, want := sch.Type[0], "string"; got != want {
 		t.Errorf("got %v want %v", got, want)

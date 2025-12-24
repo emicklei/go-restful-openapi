@@ -28,15 +28,16 @@ func asJSON(v interface{}) string {
 	return string(data)
 }
 
+//nolint:unused
 func compareJSON(t *testing.T, actualJSONAsString string, expectedJSONAsString string) bool {
 	success := false
 	var actualMap map[string]interface{}
-	json.Unmarshal([]byte(actualJSONAsString), &actualMap)
+	_ = json.Unmarshal([]byte(actualJSONAsString), &actualMap)
 	var expectedMap map[string]interface{}
 	err := json.Unmarshal([]byte(expectedJSONAsString), &expectedMap)
 	if err != nil {
 		var actualArray []interface{}
-		json.Unmarshal([]byte(actualJSONAsString), &actualArray)
+		_ = json.Unmarshal([]byte(actualJSONAsString), &actualArray)
 		var expectedArray []interface{}
 		err := json.Unmarshal([]byte(expectedJSONAsString), &expectedArray)
 		success = reflect.DeepEqual(actualArray, expectedArray)
@@ -70,6 +71,8 @@ func withLineNumbers(content string) string {
 }
 
 // mergeStrings returns a new string slice without duplicates.
+//
+//nolint:unused
 func mergeStrings(left, right []string) (merged []string) {
 	include := func(next string) {
 		for _, dup := range merged {

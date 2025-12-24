@@ -36,7 +36,7 @@ func (b definitionBuilder) addModelFrom(sample interface{}) {
 	b.addModel(reflect.TypeOf(sample), "")
 }
 
-func (b definitionBuilder) addModel(st reflect.Type, nameOverride string) *spec.Schema {
+func (b definitionBuilder) addModel(st reflect.Type, nameOverride string) {
 	// Turn pointers into simpler types so further checks are
 	// correct.
 	if st.Kind() == reflect.Ptr {
@@ -53,7 +53,7 @@ func (b definitionBuilder) addModel(st reflect.Type, nameOverride string) *spec.
 	// no models needed for primitive types unless it has alias
 	if b.isPrimitiveType(modelName, st.Kind()) {
 		if nameOverride == "" {
-			return nil
+			return
 		}
 	}
 	// golang encoding/json packages says array and slice values encode as
@@ -61,11 +61,11 @@ func (b definitionBuilder) addModel(st reflect.Type, nameOverride string) *spec.
 	// If we see a []byte here, treat it at as a primitive type (string)
 	// and deal with it in buildArrayTypeProperty.
 	if b.isByteArrayType(st) {
-		return nil
+		return
 	}
 	// see if we already have visited this model
 	if _, ok := b.Definitions[modelName]; ok {
-		return nil
+		return
 	}
 	sm := spec.Schema{
 		SchemaProps: spec.SchemaProps{
@@ -80,11 +80,11 @@ func (b definitionBuilder) addModel(st reflect.Type, nameOverride string) *spec.
 	if st.Kind() == reflect.Map {
 		_, sm = b.buildMapType(st, "value", modelName)
 		b.Definitions[modelName] = sm
-		return &sm
+		return
 	}
 	// check for structure or primitive type
 	if st.Kind() != reflect.Struct {
-		return &sm
+		return
 	}
 
 	fullDoc := getDocFromMethodSwaggerDoc2(st)
@@ -130,8 +130,6 @@ func (b definitionBuilder) addModel(st reflect.Type, nameOverride string) *spec.
 
 	// update model builder with completed model
 	b.Definitions[modelName] = sm
-
-	return &sm
 }
 
 func (b definitionBuilder) isPropertyRequired(field reflect.StructField) bool {
@@ -278,7 +276,7 @@ func (b definitionBuilder) buildStructTypeProperty(field reflect.StructField, js
 		sub.addModel(fieldType, "")
 		subKey := keyFrom(fieldType, b.Config)
 		// merge properties from sub
-		subModel, _ := sub.Definitions[subKey]
+		subModel := sub.Definitions[subKey]
 		for k, v := range subModel.Properties {
 			model.Properties[k] = v
 			// if subModel says this property is required then include it
@@ -490,7 +488,7 @@ func keyFrom(st reflect.Type, cfg Config) string {
 		// If it is an array, remove the leading []
 		key = strings.TrimPrefix(key, "[]")
 		// Swagger UI has special meaning for [
-		key = strings.Replace(key, "[]", "||", -1)
+		key = strings.ReplaceAll(key, "[]", "||")
 	}
 	return key
 }

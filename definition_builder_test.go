@@ -114,7 +114,7 @@ func TestDictionarySupport(t *testing.T) {
 			if property, found := schema.Properties["dictionary1"]; !found {
 				t.Errorf("could not find property")
 			} else {
-				if got, want := property.AdditionalProperties.Schema.SchemaProps.Ref.String(), "#/definitions/restfulspec.DictionaryValue"; got != want {
+				if got, want := property.AdditionalProperties.Schema.Ref.String(), "#/definitions/restfulspec.DictionaryValue"; got != want {
 					t.Errorf("got %v want %v", got, want)
 				}
 			}
@@ -229,7 +229,7 @@ func TestRecursiveDictionarySupport(t *testing.T) {
 			if property, found := schema.Properties["dictionary1"]; !found {
 				t.Errorf("could not find property")
 			} else {
-				if got, want := property.AdditionalProperties.Schema.SchemaProps.Ref.String(), "#/definitions/restfulspec.RecursiveDictionaryValue"; got != want {
+				if got, want := property.AdditionalProperties.Schema.Ref.String(), "#/definitions/restfulspec.RecursiveDictionaryValue"; got != want {
 					t.Errorf("got %v want %v", got, want)
 				}
 			}
@@ -263,7 +263,7 @@ func TestRecursiveDictionarySupport(t *testing.T) {
 			if property, found := schema.Properties["key2"]; !found {
 				t.Errorf("could not find property")
 			} else {
-				if got, want := property.AdditionalProperties.Schema.SchemaProps.Ref.String(), "#/definitions/restfulspec.RecursiveDictionaryValue"; got != want {
+				if got, want := property.AdditionalProperties.Schema.Ref.String(), "#/definitions/restfulspec.RecursiveDictionaryValue"; got != want {
 					t.Errorf("got %v want %v", got, want)
 				}
 			}
@@ -388,7 +388,7 @@ func TestAddSliceOfStructCreatesTypeForStruct(t *testing.T) {
 
 type (
 	X struct {
-		yy []Y
+		yy []Y //nolint:unused // used by reflection in test
 	}
 	Y struct {
 		X
@@ -416,7 +416,7 @@ func TestPotentialStackOverflow(t *testing.T) {
 }
 
 type Foo struct {
-	b *Bar
+	b *Bar //nolint:unused // used by reflection in test
 	Embed
 }
 
@@ -569,7 +569,7 @@ func TestEmbedStruct(t *testing.T) {
 }
 
 type timeHolder struct {
-	when time.Time
+	when time.Time //nolint:unused // used by reflection in test
 }
 
 func TestTimeField(t *testing.T) {

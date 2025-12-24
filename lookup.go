@@ -3,17 +3,18 @@ package restfulspec
 import restful "github.com/emicklei/go-restful/v3"
 
 func asParamType(kind int) string {
-	switch {
-	case kind == restful.PathParameterKind:
+	switch kind {
+	case restful.PathParameterKind:
 		return "path"
-	case kind == restful.QueryParameterKind:
+	case restful.QueryParameterKind:
 		return "query"
-	case kind == restful.BodyParameterKind:
+	case restful.BodyParameterKind:
 		return "body"
-	case kind == restful.HeaderParameterKind:
+	case restful.HeaderParameterKind:
 		return "header"
-	case kind == restful.FormParameterKind:
+	case restful.FormParameterKind:
 		return "formData"
+	default:
+		return ""
 	}
-	return ""
 }
