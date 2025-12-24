@@ -23,6 +23,7 @@ func NewOpenAPIService(config Config) *restful.WebService {
 }
 
 // BuildSwagger returns a Swagger object for all services' API endpoints.
+// Deprecated: use BuildOAS3 or BuildOAS2 instead.
 func BuildSwagger(config Config) *spec.Swagger {
 	// collect paths and model definitions to build Swagger object.
 	paths := &spec.Paths{Paths: map[string]spec.PathItem{}}
