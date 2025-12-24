@@ -428,3 +428,370 @@ func keysOf(m map[string]*parser.Schema) []string {
 	}
 	return keys
 }
+
+func TestBuildOAS3_WithOASVersion20_ReturnsError(t *testing.T) {
+	ws := new(restful.WebService)
+	ws.Path("/api")
+	ws.Route(ws.GET("/health").To(dummyHandler))
+
+	config := Config{
+		WebServices: []*restful.WebService{ws},
+		OASVersion:  OASVersion20, // Explicitly set OAS 2.0
+	}
+
+	_, err := BuildOAS3(config)
+	if err == nil {
+		t.Error("Expected error when calling BuildOAS3 with OASVersion20")
+	}
+}
+
+func TestBuildOAS2_DefaultResponse(t *testing.T) {
+	ws := new(restful.WebService)
+	ws.Path("/api")
+
+	type ErrorResponse struct {
+		Code    int    `json:"code"`
+		Message string `json:"message"`
+	}
+
+	ws.Route(ws.GET("/test").To(dummyHandler).
+		Operation("testDefaultResponse").
+		DefaultReturns("Unexpected error", ErrorResponse{}))
+
+	config := Config{
+		WebServices: []*restful.WebService{ws},
+	}
+
+	doc, err := BuildOAS2(config)
+	if err != nil {
+		t.Fatalf("BuildOAS2 failed: %v", err)
+	}
+
+	op := doc.Paths["/api/test"].Get
+	if op == nil {
+		t.Fatal("Expected GET operation")
+	}
+
+	// Check that default response exists
+	if op.Responses == nil || op.Responses.Default == nil {
+		t.Fatal("Expected default response")
+	}
+
+	if op.Responses.Default.Description != "Unexpected error" {
+		t.Errorf("Expected description 'Unexpected error', got '%s'", op.Responses.Default.Description)
+	}
+}
+
+func TestBuildOAS2_HeaderParameter(t *testing.T) {
+	ws := new(restful.WebService)
+	ws.Path("/api")
+	ws.Route(ws.GET("/test").To(dummyHandler).
+		Operation("testHeaderParam").
+		Param(ws.HeaderParameter("X-Request-ID", "Request tracking ID").DataType("string").Required(true)).
+		Returns(http.StatusOK, "OK", nil))
+
+	config := Config{
+		WebServices: []*restful.WebService{ws},
+	}
+
+	doc, err := BuildOAS2(config)
+	if err != nil {
+		t.Fatalf("BuildOAS2 failed: %v", err)
+	}
+
+	op := doc.Paths["/api/test"].Get
+	if op == nil {
+		t.Fatal("Expected GET operation")
+	}
+
+	if len(op.Parameters) != 1 {
+		t.Fatalf("Expected 1 parameter, got %d", len(op.Parameters))
+	}
+
+	param := op.Parameters[0]
+	if param.In != "header" {
+		t.Errorf("Expected header parameter, got %s", param.In)
+	}
+	if param.Name != "X-Request-ID" {
+		t.Errorf("Expected param name 'X-Request-ID', got '%s'", param.Name)
+	}
+	if !param.Required {
+		t.Error("Expected parameter to be required")
+	}
+}
+
+func TestBuildOAS2_FormParameter(t *testing.T) {
+	ws := new(restful.WebService)
+	ws.Path("/api")
+	ws.Route(ws.POST("/upload").To(dummyHandler).
+		Operation("testFormParam").
+		Consumes("application/x-www-form-urlencoded").
+		Param(ws.FormParameter("filename", "File name").DataType("string")).
+		Returns(http.StatusOK, "OK", nil))
+
+	config := Config{
+		WebServices: []*restful.WebService{ws},
+	}
+
+	doc, err := BuildOAS2(config)
+	if err != nil {
+		t.Fatalf("BuildOAS2 failed: %v", err)
+	}
+
+	op := doc.Paths["/api/upload"].Post
+	if op == nil {
+		t.Fatal("Expected POST operation")
+	}
+
+	if len(op.Parameters) != 1 {
+		t.Fatalf("Expected 1 parameter, got %d", len(op.Parameters))
+	}
+
+	param := op.Parameters[0]
+	if param.In != "formData" {
+		t.Errorf("Expected formData parameter, got %s", param.In)
+	}
+}
+
+func TestGetTypeForDataType_AllTypes(t *testing.T) {
+	testCases := []struct {
+		dataType string
+		expected any
+	}{
+		{"string", ""},
+		{"integer", int(0)},
+		{"int", int(0)},
+		{"int32", int32(0)},
+		{"int64", int64(0)},
+		{"number", float64(0)},
+		{"float64", float64(0)},
+		{"float32", float32(0)},
+		{"boolean", false},
+		{"bool", false},
+		{"file", nil},
+		{"", ""}, // Empty defaults to string silently
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.dataType, func(t *testing.T) {
+			result := getTypeForDataType(tc.dataType)
+			if result != tc.expected {
+				t.Errorf("getTypeForDataType(%q) = %T(%v), expected %T(%v)",
+					tc.dataType, result, result, tc.expected, tc.expected)
+			}
+		})
+	}
+}
+
+func TestConfigValidate(t *testing.T) {
+	t.Run("empty WebServices returns error", func(t *testing.T) {
+		config := Config{}
+		err := config.Validate()
+		if err == nil {
+			t.Error("Expected error for empty WebServices")
+		}
+	})
+
+	t.Run("nil WebService in slice returns error", func(t *testing.T) {
+		config := Config{
+			WebServices: []*restful.WebService{nil},
+		}
+		err := config.Validate()
+		if err == nil {
+			t.Error("Expected error for nil WebService")
+		}
+	})
+
+	t.Run("valid config returns nil", func(t *testing.T) {
+		ws := new(restful.WebService)
+		ws.Path("/api")
+		config := Config{
+			WebServices: []*restful.WebService{ws},
+		}
+		err := config.Validate()
+		if err != nil {
+			t.Errorf("Unexpected error: %v", err)
+		}
+	})
+}
+
+func TestBuildOAS2_ParameterWithConstraints(t *testing.T) {
+	ws := new(restful.WebService)
+	ws.Path("/api")
+
+	minVal := float64(1)
+	maxVal := float64(100)
+	ws.Route(ws.GET("/test").To(dummyHandler).
+		Operation("testParamConstraints").
+		Param(ws.QueryParameter("limit", "Limit results").
+			DataType("integer").
+			Minimum(minVal).
+			Maximum(maxVal).
+			DefaultValue("10")).
+		Returns(http.StatusOK, "OK", nil))
+
+	config := Config{
+		WebServices: []*restful.WebService{ws},
+	}
+
+	doc, err := BuildOAS2(config)
+	if err != nil {
+		t.Fatalf("BuildOAS2 failed: %v", err)
+	}
+
+	op := doc.Paths["/api/test"].Get
+	if op == nil {
+		t.Fatal("Expected GET operation")
+	}
+
+	if len(op.Parameters) != 1 {
+		t.Fatalf("Expected 1 parameter, got %d", len(op.Parameters))
+	}
+
+	param := op.Parameters[0]
+	if param.Minimum == nil || *param.Minimum != 1 {
+		t.Errorf("Expected minimum 1, got %v", param.Minimum)
+	}
+	if param.Maximum == nil || *param.Maximum != 100 {
+		t.Errorf("Expected maximum 100, got %v", param.Maximum)
+	}
+}
+
+func TestBuildOAS2_ParameterWithFormat(t *testing.T) {
+	ws := new(restful.WebService)
+	ws.Path("/users")
+	ws.Route(ws.GET("/{user_id}").To(dummyHandler).
+		Operation("getUserWithFormat").
+		Param(ws.PathParameter("user_id", "User ID in UUID format").
+			DataType("string").
+			DataFormat("uuid")).
+		Param(ws.QueryParameter("created_after", "Filter by creation date").
+			DataType("string").
+			DataFormat("date")).
+		Param(ws.QueryParameter("version", "API version").
+			DataType("integer").
+			DataFormat("int64")).
+		Returns(http.StatusOK, "OK", nil))
+
+	config := Config{
+		WebServices: []*restful.WebService{ws},
+	}
+
+	doc, err := BuildOAS2(config)
+	if err != nil {
+		t.Fatalf("BuildOAS2 failed: %v", err)
+	}
+
+	op := doc.Paths["/users/{user_id}"].Get
+	if op == nil {
+		t.Fatal("Expected GET operation")
+	}
+
+	if len(op.Parameters) != 3 {
+		t.Fatalf("Expected 3 parameters, got %d", len(op.Parameters))
+	}
+
+	// Find parameters by name
+	params := make(map[string]*parser.Parameter)
+	for _, p := range op.Parameters {
+		params[p.Name] = p
+	}
+
+	// Verify path parameter with uuid format
+	userIDParam := params["user_id"]
+	if userIDParam == nil {
+		t.Fatal("Expected user_id parameter")
+	}
+	if userIDParam.Format != "uuid" {
+		t.Errorf("Expected user_id format 'uuid', got '%s'", userIDParam.Format)
+	}
+	if userIDParam.In != "path" {
+		t.Errorf("Expected user_id in 'path', got '%s'", userIDParam.In)
+	}
+
+	// Verify query parameter with date format
+	createdAfterParam := params["created_after"]
+	if createdAfterParam == nil {
+		t.Fatal("Expected created_after parameter")
+	}
+	if createdAfterParam.Format != "date" {
+		t.Errorf("Expected created_after format 'date', got '%s'", createdAfterParam.Format)
+	}
+
+	// Verify query parameter with int64 format
+	versionParam := params["version"]
+	if versionParam == nil {
+		t.Fatal("Expected version parameter")
+	}
+	if versionParam.Format != "int64" {
+		t.Errorf("Expected version format 'int64', got '%s'", versionParam.Format)
+	}
+}
+
+func TestBuildOAS3_ParameterWithFormat(t *testing.T) {
+	ws := new(restful.WebService)
+	ws.Path("/items")
+	ws.Route(ws.GET("/{item_id}").To(dummyHandler).
+		Operation("getItemWithFormat").
+		Param(ws.PathParameter("item_id", "Item ID in UUID format").
+			DataType("string").
+			DataFormat("uuid")).
+		Param(ws.QueryParameter("updated_after", "Filter by update date").
+			DataType("string").
+			DataFormat("date-time")).
+		Returns(http.StatusOK, "OK", nil))
+
+	config := Config{
+		WebServices: []*restful.WebService{ws},
+		OASVersion:  OASVersion310,
+	}
+
+	doc, err := BuildOAS3(config)
+	if err != nil {
+		t.Fatalf("BuildOAS3 failed: %v", err)
+	}
+
+	pathItem := doc.Paths["/items/{item_id}"]
+	if pathItem == nil {
+		t.Fatal("Expected /items/{item_id} path")
+	}
+
+	op := pathItem.Get
+	if op == nil {
+		t.Fatal("Expected GET operation")
+	}
+
+	if len(op.Parameters) != 2 {
+		t.Fatalf("Expected 2 parameters, got %d", len(op.Parameters))
+	}
+
+	// Find parameters by name (OAS3 uses Schema for format)
+	params := make(map[string]*parser.Parameter)
+	for _, p := range op.Parameters {
+		params[p.Name] = p
+	}
+
+	// Verify path parameter with uuid format in OAS3 (format is in Schema)
+	itemIDParam := params["item_id"]
+	if itemIDParam == nil {
+		t.Fatal("Expected item_id parameter")
+	}
+	if itemIDParam.Schema == nil {
+		t.Fatal("Expected item_id schema")
+	}
+	if itemIDParam.Schema.Format != "uuid" {
+		t.Errorf("Expected item_id format 'uuid', got '%s'", itemIDParam.Schema.Format)
+	}
+
+	// Verify query parameter with date-time format in OAS3
+	updatedAfterParam := params["updated_after"]
+	if updatedAfterParam == nil {
+		t.Fatal("Expected updated_after parameter")
+	}
+	if updatedAfterParam.Schema == nil {
+		t.Fatal("Expected updated_after schema")
+	}
+	if updatedAfterParam.Schema.Format != "date-time" {
+		t.Errorf("Expected updated_after format 'date-time', got '%s'", updatedAfterParam.Schema.Format)
+	}
+}

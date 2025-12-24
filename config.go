@@ -1,6 +1,8 @@
 package restfulspec
 
 import (
+	"errors"
+	"fmt"
 	"reflect"
 
 	"github.com/emicklei/go-restful/v3"
@@ -89,4 +91,21 @@ type Config struct {
 	PostBuildOAS2Handler func(doc *parser.OAS2Document)
 	// [optional] PostBuildOAS3Handler is called after building an OAS 3.x document.
 	PostBuildOAS3Handler func(doc *parser.OAS3Document)
+}
+
+// Validate checks the Config for common misconfigurations and returns an error if any are found.
+// This can be called before BuildSwagger, BuildOAS2, or BuildOAS3 to catch configuration issues early.
+func (c Config) Validate() error {
+	if len(c.WebServices) == 0 {
+		return errors.New("restfulspec: WebServices is required but empty")
+	}
+
+	// Check for nil WebServices in the slice
+	for i, ws := range c.WebServices {
+		if ws == nil {
+			return fmt.Errorf("restfulspec: WebServices contains nil entry at index %d", i)
+		}
+	}
+
+	return nil
 }
