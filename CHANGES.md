@@ -2,6 +2,11 @@
 
 # v2+ versions are using the Go module of go-restful v3+
 
+## v2.12.0
+
+- Add support for OpenAPI 3.* (thanks to erraggy, Robbie Coleman) (BuildOAS2 and BuildOAS3)
+- Deprecate BuildSwagger
+
 ## v2.11.0
 
 - allow providing example value to a property via "example" tag (#124), thanks to Try Ajitiono <ballinst@gmail.com>  
