@@ -7,6 +7,9 @@ import (
 	"github.com/go-openapi/spec"
 )
 
+// formatBinary is the OpenAPI format for binary data (byte arrays, files).
+const formatBinary = "binary"
+
 type definitionBuilder struct {
 	Definitions spec.Definitions
 	Config      Config
@@ -328,7 +331,7 @@ func (b definitionBuilder) buildArrayTypeProperty(field reflect.StructField, jso
 		isArray = b.isSliceOrArrayType(itemType.Kind())
 		if itemType.Kind() == reflect.Uint8 {
 			stringt := "string"
-			prop.Format = "binary"
+			prop.Format = formatBinary
 			itemSchema.Type = []string{stringt}
 			return jsonName, prop
 		}

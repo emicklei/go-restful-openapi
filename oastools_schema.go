@@ -211,7 +211,14 @@ func shallowCopySchema(s *parser.Schema) *parser.Schema {
 	result.AllOf = s.AllOf
 	result.AnyOf = s.AnyOf
 	result.OneOf = s.OneOf
-	result.Extra = s.Extra
+
+	// Deep-copy Extra map to avoid shared mutation
+	if s.Extra != nil {
+		result.Extra = make(map[string]any, len(s.Extra))
+		for k, v := range s.Extra {
+			result.Extra[k] = v
+		}
+	}
 
 	return result
 }

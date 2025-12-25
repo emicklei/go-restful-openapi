@@ -2,8 +2,8 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/emicklei/go-restful/v3 v3.13.0 h1:C4Bl2xDndpU6nJ4bc1jXd+uTmYPVUwkD6bFY/oTyCes=
 github.com/emicklei/go-restful/v3 v3.13.0/go.mod h1:6n3XBCmQQb25CM2LCACGz8ukIrRry+4bhvbpWn3mrbc=
-github.com/erraggy/oastools v1.30.0 h1:tdny7/+si7OCr7Ngib0am0TtWioXnnJdji9sUjHsLRA=
-github.com/erraggy/oastools v1.30.0/go.mod h1:KVEs42aJN9Z+H9YpxqjGrXJRQdrp1W0aJ4w2R+UId+I=
+github.com/erraggy/oastools v1.33.0 h1:FFP33XaCvIxQ2RQGcBRwCEGVZJPfnol/q/jDMgPrFes=
+github.com/erraggy/oastools v1.33.0/go.mod h1:KVEs42aJN9Z+H9YpxqjGrXJRQdrp1W0aJ4w2R+UId+I=
 github.com/go-openapi/jsonpointer v0.22.4 h1:dZtK82WlNpVLDW2jlA1YCiVJFVqkED1MegOUy9kR5T4=
 github.com/go-openapi/jsonpointer v0.22.4/go.mod h1:elX9+UgznpFhgBuaMQ7iu4lvvX1nvNsesQ3oxmYTw80=
 github.com/go-openapi/jsonreference v0.21.4 h1:24qaE2y9bx/q3uRK/qN+TDwbok1NhbSmGjjySRCHtC8=

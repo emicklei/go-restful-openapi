@@ -1,6 +1,8 @@
 package restfulspec
 
 import (
+	"fmt"
+	"log"
 	"net/http"
 	"strings"
 
@@ -12,6 +14,10 @@ import (
 // BuildOAS2 builds an OAS 2.0 (Swagger) document using the oastools builder.
 // This is an alternative to BuildSwagger that uses the oastools library for document generation.
 func BuildOAS2(config Config) (*OAS2Document, error) {
+	if err := config.Validate(); err != nil {
+		return nil, err
+	}
+
 	b := newOASBuilder(config, parser.OASVersion20)
 
 	// Configure info
@@ -51,9 +57,17 @@ func BuildOAS2(config Config) (*OAS2Document, error) {
 
 // BuildOAS3 builds an OAS 3.x document using the oastools builder.
 // The OAS version can be configured via Config.OASVersion (defaults to 3.2.0).
+// Returns an error if OASVersion20 is explicitly set - use BuildOAS2 instead.
 func BuildOAS3(config Config) (*OAS3Document, error) {
+	if err := config.Validate(); err != nil {
+		return nil, err
+	}
+
 	version := config.OASVersion
-	if version == 0 || version == parser.OASVersion20 {
+	if version == parser.OASVersion20 {
+		return nil, fmt.Errorf("BuildOAS3 called with OASVersion20; use BuildOAS2 for OAS 2.0 output")
+	}
+	if version == 0 {
 		version = parser.OASVersion320 // Default to 3.2.0
 	}
 
@@ -292,8 +306,40 @@ func mapParameter(param restful.ParameterData, pattern string, _ Config) builder
 		paramOpts = append(paramOpts, builder.WithParamPattern(param.Pattern))
 	}
 
+	// DataFormat - explicitly set the parameter format if provided
+	if param.DataFormat != "" {
+		paramOpts = append(paramOpts, builder.WithParamFormat(param.DataFormat))
+	}
+
+	// AllowEmptyValue - only valid for query and form parameters
+	if param.AllowEmptyValue && (param.Kind == restful.QueryParameterKind || param.Kind == restful.FormParameterKind) {
+		paramOpts = append(paramOpts, builder.WithParamAllowEmptyValue(true))
+	}
+
+	// AllowMultiple - handle array parameters
+	if param.AllowMultiple {
+		// For array parameters, add collection format and item constraints
+		if param.CollectionFormat != "" {
+			paramOpts = append(paramOpts, builder.WithParamCollectionFormat(param.CollectionFormat))
+		}
+		if param.MinItems != nil {
+			paramOpts = append(paramOpts, builder.WithParamMinItems(int(*param.MinItems)))
+		}
+		if param.MaxItems != nil {
+			paramOpts = append(paramOpts, builder.WithParamMaxItems(int(*param.MaxItems)))
+		}
+		if param.UniqueItems {
+			paramOpts = append(paramOpts, builder.WithParamUniqueItems(true))
+		}
+	}
+
 	// Get the Go type for the parameter
 	paramType := getTypeForDataType(param.DataType)
+
+	// For AllowMultiple, wrap the type in a slice
+	if param.AllowMultiple {
+		paramType = []string{} // Use slice type for array parameters
+	}
 
 	// Map parameter kind to oastools parameter type
 	switch param.Kind {
@@ -309,13 +355,15 @@ func mapParameter(param restful.ParameterData, pattern string, _ Config) builder
 		// Body parameters are handled separately via ReadSample
 		return nil
 	default:
+		log.Printf("restfulspec: unknown parameter kind %d for parameter %q, skipping", param.Kind, param.Name)
 		return nil
 	}
 }
 
-// mapResponse converts a go-restful ResponseError to an oastools response option.
-func mapResponse(code int, resp restful.ResponseError, _ Config) builder.OperationOption {
-	respOpts := make([]builder.ResponseOption, 0, 2)
+// buildResponseOptions creates common response options from a ResponseError.
+// This shared helper is used by both mapResponse and mapDefaultResponse.
+func buildResponseOptions(resp restful.ResponseError) []builder.ResponseOption {
+	respOpts := make([]builder.ResponseOption, 0, 1+len(resp.Headers)+len(resp.Extensions))
 
 	if resp.Message != "" {
 		respOpts = append(respOpts, builder.WithResponseDescription(resp.Message))
@@ -330,38 +378,28 @@ func mapResponse(code int, resp restful.ResponseError, _ Config) builder.Operati
 	}
 
 	// Handle extensions
-	if len(resp.Extensions) > 0 {
-		for key, value := range resp.Extensions {
-			if strings.HasPrefix(key, ExtensionPrefix) {
-				respOpts = append(respOpts, builder.WithResponseExtension(key, value))
-			}
+	for key, value := range resp.Extensions {
+		if strings.HasPrefix(key, ExtensionPrefix) {
+			respOpts = append(respOpts, builder.WithResponseExtension(key, value))
 		}
 	}
 
-	if resp.Model != nil {
-		return builder.WithResponse(code, resp.Model, respOpts...)
-	}
+	return respOpts
+}
 
-	return builder.WithResponse(code, nil, respOpts...)
+// mapResponse converts a go-restful ResponseError to an oastools response option.
+func mapResponse(code int, resp restful.ResponseError, _ Config) builder.OperationOption {
+	return builder.WithResponse(code, resp.Model, buildResponseOptions(resp)...)
 }
 
 // mapDefaultResponse converts a go-restful ResponseError to a default response option.
 func mapDefaultResponse(resp restful.ResponseError, _ Config) builder.OperationOption {
-	var respOpts []builder.ResponseOption
-
-	if resp.Message != "" {
-		respOpts = append(respOpts, builder.WithResponseDescription(resp.Message))
-	}
-
-	if resp.Model != nil {
-		return builder.WithDefaultResponse(resp.Model, respOpts...)
-	}
-
-	return builder.WithDefaultResponse(nil, respOpts...)
+	return builder.WithDefaultResponse(resp.Model, buildResponseOptions(resp)...)
 }
 
 // getTypeForDataType returns a Go type that matches the given data type string.
 // This is used to provide type hints to the oastools builder for schema generation.
+// Unknown data types will log a warning and default to string.
 func getTypeForDataType(dataType string) any {
 	switch dataType {
 	case "string":
@@ -380,8 +418,12 @@ func getTypeForDataType(dataType string) any {
 		return false
 	case "file":
 		return nil // File uploads handled specially
+	case "":
+		// Empty data type defaults to string silently
+		return ""
 	default:
-		// For custom types or unknown, return string
+		// For unknown types, log a warning and default to string
+		log.Printf("restfulspec: unknown data type %q, defaulting to string", dataType)
 		return ""
 	}
 }

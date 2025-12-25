@@ -1,14 +1,24 @@
 package restfulspec
 
 import (
+	"log"
+	"net/http"
+
 	restful "github.com/emicklei/go-restful/v3"
+	"github.com/erraggy/oastools/parser"
 	"github.com/go-openapi/spec"
 )
 
 // NewOpenAPIService returns a new WebService that provides the API documentation of all services
 // conforming to the OpenAPI documentation specification.
+//
+// The builder used depends on config.OASVersion:
+//   - OASVersion >= OASVersion300: Uses BuildOAS3 (oastools library, OAS 3.x output)
+//   - OASVersion == OASVersion20: Uses BuildOAS2 (oastools library, OAS 2.0 output)
+//   - OASVersion unset (zero): Uses BuildSwagger (legacy go-openapi/spec, OAS 2.0 output)
+//
+// If building the OpenAPI document fails, the service will return HTTP 500 with an error message.
 func NewOpenAPIService(config Config) *restful.WebService {
-
 	ws := new(restful.WebService)
 	ws.Path(config.APIPath)
 	ws.Produces(restful.MIME_JSON)
@@ -16,9 +26,37 @@ func NewOpenAPIService(config Config) *restful.WebService {
 		ws.Filter(enableCORS)
 	}
 
-	swagger := BuildSwagger(config)
-	resource := specResource{swagger: swagger}
-	ws.Route(ws.GET("/").To(resource.getSwagger))
+	// Build the appropriate document based on OASVersion
+	var doc any
+	var buildErr error
+	switch {
+	case config.OASVersion >= parser.OASVersion300:
+		doc, buildErr = BuildOAS3(config)
+	case config.OASVersion == parser.OASVersion20:
+		doc, buildErr = BuildOAS2(config)
+	default:
+		doc = BuildSwagger(config)
+	}
+
+	if buildErr != nil {
+		log.Printf("restfulspec: failed to build OpenAPI document: %v", buildErr)
+		ws.Route(ws.GET("/").To(func(req *restful.Request, resp *restful.Response) {
+			resp.WriteHeader(http.StatusInternalServerError)
+			if err := resp.WriteAsJson(map[string]string{
+				"error":   "Failed to build OpenAPI specification",
+				"details": buildErr.Error(),
+			}); err != nil {
+				log.Printf("restfulspec: failed to write error response: %v", err)
+			}
+		}))
+		return ws
+	}
+
+	ws.Route(ws.GET("/").To(func(req *restful.Request, resp *restful.Response) {
+		if err := resp.WriteAsJson(doc); err != nil {
+			log.Printf("restfulspec: failed to write OpenAPI JSON response: %v", err)
+		}
+	}))
 	return ws
 }
 
@@ -67,13 +105,4 @@ func enableCORS(req *restful.Request, resp *restful.Response, chain *restful.Fil
 		}
 	}
 	chain.ProcessFilter(req, resp)
-}
-
-// specResource is a REST resource to serve the Open-API spec.
-type specResource struct {
-	swagger *spec.Swagger
-}
-
-func (s specResource) getSwagger(req *restful.Request, resp *restful.Response) {
-	_ = resp.WriteAsJson(s.swagger)
 }
