@@ -47,6 +47,11 @@ func BuildOAS2(config Config) (*OAS2Document, error) {
 		doc.Schemes = config.Schemes
 	}
 
+	// Apply legacy optional tag post-processing
+	if config.LegacyStructTags && doc.Definitions != nil {
+		applyLegacyOptionalToSchemas(doc.Definitions)
+	}
+
 	// Call post-build handler if set
 	if config.PostBuildOAS2Handler != nil {
 		config.PostBuildOAS2Handler(doc)
@@ -106,6 +111,11 @@ func BuildOAS3(config Config) (*OAS3Document, error) {
 		return nil, err
 	}
 
+	// Apply legacy optional tag post-processing
+	if config.LegacyStructTags && doc.Components != nil && doc.Components.Schemas != nil {
+		applyLegacyOptionalToSchemas(doc.Components.Schemas)
+	}
+
 	// Call post-build handler if set
 	if config.PostBuildOAS3Handler != nil {
 		config.PostBuildOAS3Handler(doc)
@@ -133,6 +143,11 @@ func newOASBuilder(config Config, version parser.OASVersion) *builder.Builder {
 	// Semantic deduplication
 	if config.SemanticDeduplication {
 		opts = append(opts, builder.WithSemanticDeduplication(true))
+	}
+
+	// Legacy struct tag support
+	if config.LegacyStructTags {
+		opts = append(opts, builder.WithSchemaFieldProcessor(legacyTagFieldProcessor))
 	}
 
 	return builder.New(version, opts...)

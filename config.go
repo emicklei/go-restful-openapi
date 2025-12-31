@@ -91,6 +91,13 @@ type Config struct {
 	PostBuildOAS2Handler func(doc *parser.OAS2Document)
 	// [optional] PostBuildOAS3Handler is called after building an OAS 3.x document.
 	PostBuildOAS3Handler func(doc *parser.OAS3Document)
+	// [optional] LegacyStructTags enables support for go-restful-openapi's legacy struct tags.
+	// When true, struct tags like `description`, `minimum`, `maximum`, `enum`, `format`, `type`,
+	// `unique`, `readOnly`, `optional`, `example`, `default`, `x-nullable`, and `x-go-name`
+	// are processed in addition to the standard `oas:"..."` tags.
+	// Legacy tags are only applied to fields that do NOT have an `oas:"..."` tag.
+	// Default is false. Only applies to BuildOAS2/BuildOAS3.
+	LegacyStructTags bool
 }
 
 // Validate checks the Config for common misconfigurations and returns an error if any are found.
