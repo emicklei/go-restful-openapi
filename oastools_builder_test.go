@@ -795,3 +795,398 @@ func TestBuildOAS3_ParameterWithFormat(t *testing.T) {
 		t.Errorf("Expected updated_after format 'date-time', got '%s'", updatedAfterParam.Schema.Format)
 	}
 }
+
+// --- Legacy Struct Tag Tests ---
+
+// TestLegacyTagUser demonstrates a type using go-restful-openapi's legacy struct tags.
+type TestLegacyTagUser struct {
+	ID          int     `json:"id"`
+	Name        string  `json:"name" description:"User's full name"`
+	Email       string  `json:"email" format:"email"`
+	Age         int     `json:"age,omitempty" minimum:"0" maximum:"150"`
+	Role        string  `json:"role" enum:"admin|user|guest"`
+	Score       float64 `json:"score" default:"0.0"`
+	IsActive    bool    `json:"is_active" readOnly:"true"`
+	Tags        string  `json:"tags" type:"[]string" unique:"true"`
+	NullableRef *string `json:"nullable_ref" x-nullable:"true"`
+	GoName      string  `json:"go_name" x-go-name:"CustomGoName"`
+	Example     string  `json:"example" example:"test@example.com"`
+	Nickname    string  `json:"nickname" optional:"true"` // Should NOT be in required array
+}
+
+// TestMalformedTagUser has invalid struct tag values to test graceful degradation.
+type TestMalformedTagUser struct {
+	BadMin int `json:"bad_min" minimum:"not-a-number"`
+	BadMax int `json:"bad_max" maximum:"invalid"`
+}
+
+// TestMixedTagUser has both legacy and oas tags - oas should take precedence.
+type TestMixedTagUser struct {
+	// Field with oas tag - should use oas, ignore legacy
+	ID int `json:"id" oas:"description=OAS ID description" description:"Legacy ID description"`
+	// Field with only legacy tags
+	Name string `json:"name" description:"User name from legacy"`
+}
+
+func TestBuildOAS2_LegacyStructTags(t *testing.T) {
+	ws := new(restful.WebService)
+	ws.Path("/users")
+	ws.Route(ws.GET("").To(dummyHandler).
+		Operation("listLegacyUsers").
+		Writes([]TestLegacyTagUser{}).
+		Returns(http.StatusOK, "OK", []TestLegacyTagUser{}))
+
+	config := Config{
+		WebServices:      []*restful.WebService{ws},
+		SchemaNaming:     SchemaNamingTypeOnly,
+		LegacyStructTags: true, // Enable legacy struct tag support
+	}
+
+	doc, err := BuildOAS2(config)
+	if err != nil {
+		t.Fatalf("BuildOAS2 failed: %v", err)
+	}
+
+	// Find the schema
+	schema, ok := doc.Definitions["TestLegacyTagUser"]
+	if !ok {
+		t.Logf("Available definitions: %v", keysOf(doc.Definitions))
+		t.Fatal("Expected TestLegacyTagUser definition")
+	}
+
+	// Verify description tag
+	nameField := schema.Properties["name"]
+	if nameField == nil {
+		t.Fatal("Expected 'name' property")
+	}
+	if nameField.Description != "User's full name" {
+		t.Errorf("Expected description 'User's full name', got '%s'", nameField.Description)
+	}
+
+	// Verify format tag
+	emailField := schema.Properties["email"]
+	if emailField == nil {
+		t.Fatal("Expected 'email' property")
+	}
+	if emailField.Format != "email" {
+		t.Errorf("Expected format 'email', got '%s'", emailField.Format)
+	}
+
+	// Verify minimum/maximum tags
+	ageField := schema.Properties["age"]
+	if ageField == nil {
+		t.Fatal("Expected 'age' property")
+	}
+	if ageField.Minimum == nil || *ageField.Minimum != 0 {
+		t.Errorf("Expected minimum 0, got %v", ageField.Minimum)
+	}
+	if ageField.Maximum == nil || *ageField.Maximum != 150 {
+		t.Errorf("Expected maximum 150, got %v", ageField.Maximum)
+	}
+
+	// Verify enum tag
+	roleField := schema.Properties["role"]
+	if roleField == nil {
+		t.Fatal("Expected 'role' property")
+	}
+	if len(roleField.Enum) != 3 {
+		t.Errorf("Expected 3 enum values, got %d", len(roleField.Enum))
+	}
+
+	// Verify readOnly tag
+	isActiveField := schema.Properties["is_active"]
+	if isActiveField == nil {
+		t.Fatal("Expected 'is_active' property")
+	}
+	if !isActiveField.ReadOnly {
+		t.Error("Expected is_active to be readOnly")
+	}
+
+	// Verify type tag (array override)
+	tagsField := schema.Properties["tags"]
+	if tagsField == nil {
+		t.Fatal("Expected 'tags' property")
+	}
+	if tagsField.Type != "array" {
+		t.Errorf("Expected type 'array', got '%v'", tagsField.Type)
+	}
+	if !tagsField.UniqueItems {
+		t.Error("Expected uniqueItems to be true")
+	}
+
+	// Verify example tag
+	exampleField := schema.Properties["example"]
+	if exampleField == nil {
+		t.Fatal("Expected 'example' property")
+	}
+	if exampleField.Example != "test@example.com" {
+		t.Errorf("Expected example 'test@example.com', got '%v'", exampleField.Example)
+	}
+
+	// Verify x-nullable extension
+	nullableField := schema.Properties["nullable_ref"]
+	if nullableField == nil {
+		t.Fatal("Expected 'nullable_ref' property")
+	}
+	if nullableField.Extra == nil || nullableField.Extra["x-nullable"] != true {
+		t.Error("Expected x-nullable extension to be true")
+	}
+
+	// Verify x-go-name extension
+	goNameField := schema.Properties["go_name"]
+	if goNameField == nil {
+		t.Fatal("Expected 'go_name' property")
+	}
+	if goNameField.Extra == nil || goNameField.Extra["x-go-name"] != "CustomGoName" {
+		t.Errorf("Expected x-go-name 'CustomGoName', got %v", goNameField.Extra["x-go-name"])
+	}
+
+	// Verify default tag
+	scoreField := schema.Properties["score"]
+	if scoreField == nil {
+		t.Fatal("Expected 'score' property")
+	}
+	if scoreField.Default != 0.0 {
+		t.Errorf("Expected default 0.0, got %v (type %T)", scoreField.Default, scoreField.Default)
+	}
+
+	// Verify optional tag - nickname should NOT be in required array
+	nicknameField := schema.Properties["nickname"]
+	if nicknameField == nil {
+		t.Fatal("Expected 'nickname' property")
+	}
+	// The x-restful-optional extension should be cleaned up
+	if nicknameField.Extra != nil && nicknameField.Extra["x-restful-optional"] != nil {
+		t.Error("Expected x-restful-optional extension to be cleaned up")
+	}
+	// nickname should not be in required array
+	for _, req := range schema.Required {
+		if req == "nickname" {
+			t.Error("Expected 'nickname' to NOT be in required array (has optional:\"true\")")
+		}
+	}
+}
+
+func TestBuildOAS2_LegacyStructTagsDisabled(t *testing.T) {
+	ws := new(restful.WebService)
+	ws.Path("/users")
+	ws.Route(ws.GET("").To(dummyHandler).
+		Operation("listLegacyUsersDisabled").
+		Writes([]TestLegacyTagUser{}).
+		Returns(http.StatusOK, "OK", []TestLegacyTagUser{}))
+
+	config := Config{
+		WebServices:      []*restful.WebService{ws},
+		SchemaNaming:     SchemaNamingTypeOnly,
+		LegacyStructTags: false, // Legacy struct tags disabled (default)
+	}
+
+	doc, err := BuildOAS2(config)
+	if err != nil {
+		t.Fatalf("BuildOAS2 failed: %v", err)
+	}
+
+	schema, ok := doc.Definitions["TestLegacyTagUser"]
+	if !ok {
+		t.Logf("Available definitions: %v", keysOf(doc.Definitions))
+		t.Fatal("Expected TestLegacyTagUser definition")
+	}
+
+	// With legacy tags disabled, description should NOT be set from legacy tag
+	nameField := schema.Properties["name"]
+	if nameField == nil {
+		t.Fatal("Expected 'name' property")
+	}
+	if nameField.Description == "User's full name" {
+		t.Error("Legacy tags should not be applied when LegacyStructTags is false")
+	}
+}
+
+func TestBuildOAS2_LegacyTagsSkippedWhenOASTagPresent(t *testing.T) {
+	ws := new(restful.WebService)
+	ws.Path("/users")
+	ws.Route(ws.GET("").To(dummyHandler).
+		Operation("listMixedTagUsers").
+		Writes([]TestMixedTagUser{}).
+		Returns(http.StatusOK, "OK", []TestMixedTagUser{}))
+
+	config := Config{
+		WebServices:      []*restful.WebService{ws},
+		SchemaNaming:     SchemaNamingTypeOnly,
+		LegacyStructTags: true,
+	}
+
+	doc, err := BuildOAS2(config)
+	if err != nil {
+		t.Fatalf("BuildOAS2 failed: %v", err)
+	}
+
+	schema, ok := doc.Definitions["TestMixedTagUser"]
+	if !ok {
+		t.Logf("Available definitions: %v", keysOf(doc.Definitions))
+		t.Fatal("Expected TestMixedTagUser definition")
+	}
+
+	// ID field has oas tag - should use OAS description, not legacy
+	idField := schema.Properties["id"]
+	if idField == nil {
+		t.Fatal("Expected 'id' property")
+	}
+	if idField.Description != "OAS ID description" {
+		t.Errorf("Expected OAS description 'OAS ID description', got '%s'", idField.Description)
+	}
+	if idField.Description == "Legacy ID description" {
+		t.Error("Legacy description should not override OAS tag")
+	}
+
+	// Name field only has legacy tag - should use legacy description
+	nameField := schema.Properties["name"]
+	if nameField == nil {
+		t.Fatal("Expected 'name' property")
+	}
+	if nameField.Description != "User name from legacy" {
+		t.Errorf("Expected legacy description 'User name from legacy', got '%s'", nameField.Description)
+	}
+}
+
+func TestBuildOAS3_LegacyStructTags(t *testing.T) {
+	ws := new(restful.WebService)
+	ws.Path("/users")
+	ws.Route(ws.GET("").To(dummyHandler).
+		Operation("listLegacyUsersOAS3").
+		Writes([]TestLegacyTagUser{}).
+		Returns(http.StatusOK, "OK", []TestLegacyTagUser{}))
+
+	config := Config{
+		WebServices:      []*restful.WebService{ws},
+		SchemaNaming:     SchemaNamingTypeOnly,
+		OASVersion:       OASVersion320,
+		LegacyStructTags: true,
+	}
+
+	doc, err := BuildOAS3(config)
+	if err != nil {
+		t.Fatalf("BuildOAS3 failed: %v", err)
+	}
+
+	// In OAS3, schemas are in Components.Schemas
+	if doc.Components == nil || doc.Components.Schemas == nil {
+		t.Fatal("Expected components.schemas to be non-nil")
+	}
+
+	schema, ok := doc.Components.Schemas["TestLegacyTagUser"]
+	if !ok {
+		t.Logf("Available schemas: %v", keysOf(doc.Components.Schemas))
+		t.Fatal("Expected TestLegacyTagUser schema")
+	}
+
+	// Verify description tag works in OAS3
+	nameField := schema.Properties["name"]
+	if nameField == nil {
+		t.Fatal("Expected 'name' property")
+	}
+	if nameField.Description != "User's full name" {
+		t.Errorf("Expected description 'User's full name', got '%s'", nameField.Description)
+	}
+
+	// Verify format tag works in OAS3
+	emailField := schema.Properties["email"]
+	if emailField == nil {
+		t.Fatal("Expected 'email' property")
+	}
+	if emailField.Format != "email" {
+		t.Errorf("Expected format 'email', got '%s'", emailField.Format)
+	}
+}
+
+func TestBuildOAS2_LegacyMalformedTags(t *testing.T) {
+	ws := new(restful.WebService)
+	ws.Path("/users")
+	ws.Route(ws.GET("").To(dummyHandler).
+		Operation("listMalformedUsers").
+		Writes([]TestMalformedTagUser{}).
+		Returns(http.StatusOK, "OK", []TestMalformedTagUser{}))
+
+	config := Config{
+		WebServices:      []*restful.WebService{ws},
+		SchemaNaming:     SchemaNamingTypeOnly,
+		LegacyStructTags: true,
+	}
+
+	// Should not error - malformed tags are gracefully ignored with logging
+	doc, err := BuildOAS2(config)
+	if err != nil {
+		t.Fatalf("BuildOAS2 failed: %v", err)
+	}
+
+	schema, ok := doc.Definitions["TestMalformedTagUser"]
+	if !ok {
+		t.Logf("Available definitions: %v", keysOf(doc.Definitions))
+		t.Fatal("Expected TestMalformedTagUser definition")
+	}
+
+	// Verify invalid minimum tag is gracefully ignored (Minimum remains nil)
+	badMinField := schema.Properties["bad_min"]
+	if badMinField == nil {
+		t.Fatal("Expected 'bad_min' property")
+	}
+	if badMinField.Minimum != nil {
+		t.Errorf("Expected Minimum to be nil for invalid tag, got %v", *badMinField.Minimum)
+	}
+
+	// Verify invalid maximum tag is gracefully ignored (Maximum remains nil)
+	badMaxField := schema.Properties["bad_max"]
+	if badMaxField == nil {
+		t.Fatal("Expected 'bad_max' property")
+	}
+	if badMaxField.Maximum != nil {
+		t.Errorf("Expected Maximum to be nil for invalid tag, got %v", *badMaxField.Maximum)
+	}
+}
+
+func TestBuildOAS3_LegacyOptionalTag(t *testing.T) {
+	ws := new(restful.WebService)
+	ws.Path("/users")
+	ws.Route(ws.GET("").To(dummyHandler).
+		Operation("listOptionalUsersOAS3").
+		Writes([]TestLegacyTagUser{}).
+		Returns(http.StatusOK, "OK", []TestLegacyTagUser{}))
+
+	config := Config{
+		WebServices:      []*restful.WebService{ws},
+		SchemaNaming:     SchemaNamingTypeOnly,
+		OASVersion:       OASVersion320,
+		LegacyStructTags: true,
+	}
+
+	doc, err := BuildOAS3(config)
+	if err != nil {
+		t.Fatalf("BuildOAS3 failed: %v", err)
+	}
+
+	if doc.Components == nil || doc.Components.Schemas == nil {
+		t.Fatal("Expected components.schemas to be non-nil")
+	}
+
+	schema, ok := doc.Components.Schemas["TestLegacyTagUser"]
+	if !ok {
+		t.Logf("Available schemas: %v", keysOf(doc.Components.Schemas))
+		t.Fatal("Expected TestLegacyTagUser schema")
+	}
+
+	// Verify optional tag works in OAS3 - nickname should NOT be in required array
+	for _, req := range schema.Required {
+		if req == "nickname" {
+			t.Error("Expected 'nickname' to NOT be in required array (has optional:\"true\")")
+		}
+	}
+
+	// The x-restful-optional extension should be cleaned up
+	nicknameField := schema.Properties["nickname"]
+	if nicknameField == nil {
+		t.Fatal("Expected 'nickname' property")
+	}
+	if nicknameField.Extra != nil && nicknameField.Extra["x-restful-optional"] != nil {
+		t.Error("Expected x-restful-optional extension to be cleaned up")
+	}
+}

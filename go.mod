@@ -2,7 +2,7 @@ module github.com/emicklei/go-restful-openapi/v2
 
 require (
 	github.com/emicklei/go-restful/v3 v3.13.0
-	github.com/erraggy/oastools v1.33.0
+	github.com/erraggy/oastools v1.36.1
 	github.com/go-openapi/spec v0.22.2
 )
 
