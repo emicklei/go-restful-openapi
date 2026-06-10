@@ -348,9 +348,14 @@ func mapParameter(param restful.ParameterData, pattern string, _ Config) builder
 		}
 	}
 
+	// Body parameters are handled separately via ReadSample; skip them early
+	// to avoid spurious warnings from getTypeForDataType for model names.
+	if param.Kind == restful.BodyParameterKind {
+		return nil
+	}
+
 	// Get the Go type for the parameter
 	paramType := getTypeForDataType(param.DataType)
-
 	// For AllowMultiple, wrap the type in a slice
 	if param.AllowMultiple {
 		paramType = []string{} // Use slice type for array parameters
@@ -366,9 +371,6 @@ func mapParameter(param restful.ParameterData, pattern string, _ Config) builder
 		return builder.WithHeaderParam(param.Name, paramType, paramOpts...)
 	case restful.FormParameterKind:
 		return builder.WithFormParam(param.Name, paramType, paramOpts...)
-	case restful.BodyParameterKind:
-		// Body parameters are handled separately via ReadSample
-		return nil
 	default:
 		log.Printf("restfulspec: unknown parameter kind %d for parameter %q, skipping", param.Kind, param.Name)
 		return nil
